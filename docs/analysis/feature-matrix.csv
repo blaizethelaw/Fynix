@@ -1,0 +1,6 @@
+Feature,Source,Correctness,UX,Performance,Accessibility,Testability,Maintainability,Notes
+Calculator,phoenix_plan_daily_paydown_app_vite_react_p_5_svg.jsx,4,3,3,2,1,2,Vite React paydown calculator
+Calculator,fynix_complete_app_html_react_via_cdn.html,2,2,2,2,1,1,CDN React prototype
+Dashboard,phoenix_ultimate.html,3,3,2,2,1,1,HTML dashboard variant
+Content,Financial Planning for Difficult Situations.md,5,3,5,4,2,4,Markdown guide on planning
+Content,Financial Recovery and Credit Rebuilding.md,5,3,5,4,2,4,Markdown credit rebuilding guide

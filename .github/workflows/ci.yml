@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-test-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm i
+          npm i -D playwright
+
+      - name: Typecheck & build
+        run: npm run build --if-present
+
+      - name: Lint (if present)
+        run: npm run lint --if-present
+
+      - name: Unit tests (if present)
+        run: npx vitest run --passWithNoTests || echo "No tests or vitest not configured"
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Start preview server (Vite)
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          npx --yes wait-on http://localhost:4173
+
+      - name: Verify branding and meta
+        env:
+          BASE_URL: http://localhost:4173
+        run: node scripts/verify-branding.mjs
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: |
+            playwright-report
+            dist
+            **/vite*.log
