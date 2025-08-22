@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Fynix - Rise From Financial Ashes</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <!-- React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        :root {
+            --phoenix-orange: #f97316;
+            --phoenix-red: #ea580c;
+            --phoenix-yellow: #f59e0b;
+            --phoenix-dark: #111827;
+            --glass-white: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #111827 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.2;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Glass effect */
+        .glass {
+            background: var(--glass-white);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1f2937, #111827);
+            padding: 2rem; border-radius: 1rem; max-width: 600px;
+            width: 90%; max-height: 90vh; overflow-y: auto;
+            border: 1px solid var(--glass-border);
+        }
+        
+        /* Health Colors */
+        .health-good { background: linear-gradient(135deg, #10b981, #059669); }
+        .health-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .health-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0.5rem;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+            }
+            
+            .desktop-nav {
+                display: none !important;
+            }
+            
+            .main-content {
+                padding-bottom: 80px !important;
+            }
+        }
+        
+        .tab-active {
+            background: linear-gradient(135deg, var(--phoenix-orange), var(--phoenix-red));
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        // ==================== GUIDES DATA (MASSIVELY EXPANDED) ====================
+        const guidesData = [
+            {
+                id: 'g1',
+                title: 'Financial Recovery',
+                sections: [
+                    {
+                        id: 's1-1',
+                        title: 'The Emergency Fund',
+                        takeaway: 'Your first financial goal should be a small, accessible emergency fund to cover unexpected expenses without derailing your progress.',
+                        content: 'An emergency fund is your financial safety net. It prevents you from going into debt when unexpected costs arise, like a car repair or medical bill.\n\nStart small. Your first goal should be **$500 to $1,000**. This amount can cover many common emergencies and give you peace of mind.\n\n- **Where to keep it:** Store your fund in a separate high-yield savings account. You want it to be accessible but not so easy that you dip into it for non-emergencies.\n- **How to build it:** Automate transfers. Even $20 a week adds up. Treat it like any other bill that must be paid.',
+                        actionable: { type: 'add_saving', name: 'Emergency Fund', goal: 1000 },
+                        resources: [
+                            { type: 'youtube', title: 'How to Build an Emergency Fund Fast', url: 'https://www.youtube.com/watch?v=h_4-K9W2p7Y' },
+                            { type: 'article', title: 'NerdWallet: Why You Need an Emergency Fund', url: 'https://www.nerdwallet.com/article/banking/what-is-an-emergency-fund' }
+                        ]
+                    },
+                    {
+                        id: 's1-2',
+                        title: 'Debt Demolition',
+                        takeaway: 'Tackle high-interest debt aggressively to free up your income and reduce the amount you pay in interest over time.',
+                        content: 'High-interest debt, especially from credit cards, can feel like a weight holding you down. Paying it off is one of the best investments you can make.\n\nThere are two popular strategies:\n- **The Avalanche Method:** Focus on paying off the debt with the **highest interest rate first**, while making minimum payments on all others. This saves you the most money in the long run.\n- **The Snowball Method:** Focus on paying off the **smallest debt first**, regardless of interest rate. This gives you quick wins and builds momentum.\n\nChoose the method that motivates you the most. The key is to be consistent and put any extra money you have towards your debt.',
+                        resources: [
+                            { type: 'youtube', title: 'Debt Snowball vs. Debt Avalanche', url: 'https://www.youtube.com/watch?v=T_S3s4I4M1w' },
+                            { type: 'article', title: 'Investopedia: Debt Snowball vs. Avalanche', url: 'https://www.investopedia.com/articles/personal-finance/080716/debt-avalanche-vs-debt-snowball-which-best-you.asp' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'g2',
+                title: 'Budgeting & Saving',
+                sections: [
+                    {
+                        id: 's2-1',
+                        title: 'Zero-Based Budgeting',
+                        takeaway: 'Give every dollar a job to maximize your income and ensure you\'re consciously allocating money to your goals.',
+                        content: 'Zero-based budgeting is a method where your income minus your expenses equals zero. This doesn\'t mean you have no money left; it means every single dollar is assigned a purpose—whether it\'s for bills, debt repayment, savings, or investments.\n\n**How to do it:**\n1.  List all your monthly income sources.\n2.  List all your fixed expenses (rent, utilities, etc.).\n3.  List all your variable expenses (groceries, gas, entertainment).\n4.  Allocate money to savings goals and debt repayment.\n5.  Adjust your variable spending until Income - Expenses = 0.\n\nThis method forces you to be intentional with your money and can reveal areas where you might be overspending.',
+                        resources: [
+                            { type: 'youtube', title: 'How To Make A Zero-Based Budget', url: 'https://www.youtube.com/watch?v=k9a1iCjYn1g' },
+                            { type: 'article', title: 'Ramsey Solutions: What Is a Zero-Based Budget?', url: 'https://www.ramseysolutions.com/budgeting/what-is-a-zero-based-budget' }
+                        ]
+                    },
+                    {
+                        id: 's2-2',
+                        title: 'High-Yield Savings Accounts',
+                        takeaway: 'Make your savings work for you by using a High-Yield Savings Account (HYSA) to earn significantly more interest than a traditional account.',
+                        content: 'A High-Yield Savings Account (HYSA) is a type of savings account that typically pays a much higher interest rate than traditional savings accounts. While the rates fluctuate, they are often 10x or more than the national average.\n\n**Why use an HYSA?**\n- **Faster Growth:** Your money grows faster without any additional risk.\n- **FDIC Insured:** Like traditional banks, most HYSAs are FDIC insured up to $250,000.\n- **Great for Goals:** Perfect for emergency funds, down payments, or other large savings goals where you want your money to be safe but still grow.',
+                        actionable: { type: 'add_saving', name: 'Open HYSA', goal: 50 },
+                        resources: [
+                            { type: 'youtube', title: 'High-Yield Savings Accounts Explained', url: 'https://www.youtube.com/watch?v=ly-v2oA1u3U' },
+                            { type: 'article', title: 'NerdWallet: Best High-Yield Savings Accounts', url: 'https://www.nerdwallet.com/best/banking/high-yield-online-savings-accounts' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'g3',
+                title: 'Credit & Wealth',
+                sections: [
+                    {
+                        id: 's3-1',
+                        title: 'Rebuilding Your Credit',
+                        takeaway: 'A good credit score is crucial for your financial future. It can be rebuilt with consistent, positive habits.',
+                        content: 'Your credit score affects your ability to get loans, credit cards, and even apartments. Rebuilding it takes time, but it\'s entirely possible.\n\nKey factors for a good score:\n- **Payment History (35%):** **Always pay your bills on time.** This is the single most important factor.\n- **Amounts Owed (30%):** Keep your credit utilization low. Aim to use less than 30% of your available credit on each card.\n- **Length of Credit History (15%):** Avoid closing old credit cards, as this can shorten your credit history.\n\nConsider a secured credit card if you\'re having trouble getting approved for a traditional one. It requires a cash deposit but reports to the credit bureaus just like a regular card.',
+                        resources: [
+                            { type: 'youtube', title: 'How to Rebuild Credit From Scratch', url: 'https://www.youtube.com/watch?v=ac1bS-A2l-c' },
+                            { type: 'article', title: 'Experian: How to Rebuild Your Credit', url: 'https://www.experian.com/blogs/ask-experian/how-to-rebuild-your-credit/' }
+                        ]
+                    },
+                    {
+                        id: 's3-2',
+                        title: 'Understanding Your Score',
+                        takeaway: 'Knowing what makes up your credit score is the first step to improving it. Focus on the biggest factors for the quickest impact.',
+                        content: 'Credit scores, like FICO and VantageScore, range from 300 to 850. They are calculated based on several factors from your credit report. While the exact formulas are secret, the components are well-known:\n\n- **Payment History (35%):** The most significant factor. Late payments, bankruptcies, and collections have a major negative impact.\n- **Credit Utilization (30%):** The ratio of your credit card balances to your credit limits. Lower is better.\n- **Credit Age (15%):** The average age of all your credit accounts. Older is better.\n- **Credit Mix (10%):** Having a mix of different types of credit (credit cards, installment loans) can be a positive.\n- **New Credit (10%):** Opening several new accounts in a short period can temporarily lower your score.',
+                        resources: [
+                            { type: 'youtube', title: 'What is a FICO Score?', url: 'https://www.youtube.com/watch?v=AS4w-0E5bPA' },
+                            { type: 'article', title: 'MyFICO: What\'s in Your FICO Score', url: 'https://www.myfico.com/credit-education/whats-in-your-credit-score' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'g4',
+                title: 'Investing Basics',
+                sections: [
+                    {
+                        id: 's4-1',
+                        title: 'Why Invest?',
+                        takeaway: 'Investing is the most powerful tool for building long-term wealth and making your money work for you through the power of compounding.',
+                        content: 'Saving money is essential, but it\'s not enough to build significant wealth. Due to inflation, the money you save today will have less purchasing power in the future. Investing allows your money to grow at a rate that outpaces inflation.\n\n**The Power of Compounding:** When you invest, you earn returns not just on your initial investment, but also on the accumulated returns. It\'s like a snowball rolling downhill, getting bigger and bigger over time. The earlier you start, the more powerful compounding becomes.',
+                        resources: [
+                            { type: 'youtube', title: 'The Power of Compound Interest', url: 'https://www.youtube.com/watch?v=rwuQ3I-5B_4' },
+                            { type: 'article', title: 'Investopedia: The Magic of Compounding', url: 'https://www.investopedia.com/terms/c/compounding.asp' }
+                        ]
+                    },
+                    {
+                        id: 's4-2',
+                        title: 'Index Funds & ETFs',
+                        takeaway: 'For most people, low-cost index funds or ETFs are the simplest and most effective way to start investing in the stock market.',
+                        content: 'Don\'t think you need to be a stock-picking genius to invest. Index funds and Exchange-Traded Funds (ETFs) are baskets of stocks that track a market index, like the S&P 500.\n\n**Benefits:**\n- **Instant Diversification:** By buying one share, you\'re investing in hundreds or even thousands of companies, which reduces your risk.\n- **Low Cost:** They have very low expense ratios compared to actively managed funds.\n- **Simplicity:** It\'s a "set it and forget it" strategy that has historically performed very well over the long term.\n\nYou can open an investment account (like a Roth IRA or a standard brokerage account) with providers like Vanguard, Fidelity, or Charles Schwab to get started.',
+                        resources: [
+                            { type: 'youtube', title: 'A Guide to Index Funds & ETFs', url: 'https://www.youtube.com/watch?v=1-p_i29bV_M' },
+                            { type: 'article', title: 'Forbes: ETFs Vs. Index Funds', url: 'https://www.forbes.com/advisor/investing/etf-vs-index-fund/' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'g5',
+                title: 'Income Growth',
+                sections: [
+                    {
+                        id: 's5-1',
+                        title: 'Negotiating Your Salary',
+                        takeaway: 'Effectively negotiating your salary can be the fastest way to increase your income and accelerate your financial goals.',
+                        content: 'Many people are hesitant to negotiate their salary, but companies often expect it. A successful negotiation can mean thousands of extra dollars per year.\n\n**Key Steps:**\n- **Do Your Research:** Use sites like Glassdoor and Levels.fyi to understand the market rate for your position, experience, and location.\n- **Know Your Value:** Prepare a list of your accomplishments and the value you bring to the company.\n- **Practice:** Role-play the conversation with a friend. Be confident, polite, and prepared to state your case clearly.\n- **Always wait for them to give the first number.** This gives you a baseline to negotiate from.',
+                        resources: [
+                            { type: 'youtube', title: 'How To Negotiate A Higher Salary', url: 'https://www.youtube.com/watch?v=pS0yE-f40bE' },
+                            { type: 'article', title: 'Harvard Business Review: Salary Negotiation', url: 'https://hbr.org/2023/11/the-art-of-salary-negotiation' }
+                        ]
+                    },
+                    {
+                        id: 's5-2',
+                        title: 'Building a Side Hustle',
+                        takeaway: 'A side hustle can provide an extra income stream to pay off debt faster, save more aggressively, or invest for the future.',
+                        content: 'A side hustle is any work you do outside of your main job to earn extra money. It can be based on a hobby, a skill, or simply your willingness to do a task.\n\n**Ideas for Side Hustles:**\n- **Freelancing:** Offer your professional skills (writing, design, coding) on platforms like Upwork or Fiverr.\n- **Gig Economy:** Drive for Uber, deliver food with DoorDash, or do tasks on TaskRabbit.\n- **Sell Products:** Create products to sell on Etsy, or resell items on eBay.\n- **Share Your Knowledge:** Tutor students, teach a language, or create an online course.\n\nThe key is to find something that fits your schedule and skills without leading to burnout.',
+                        resources: [
+                            { type: 'youtube', title: '20 Side Hustles You Can Start Today', url: 'https://www.youtube.com/watch?v=JjP-40_d-vA' },
+                            { type: 'article', title: 'Side Hustle Nation: 99 Side Hustle Ideas', url: 'https://www.sidehuslernation.com/side-hustle-ideas/' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'g6',
+                title: 'Advanced Investing',
+                sections: [
+                    {
+                        id: 's6-1',
+                        title: 'Roth IRA Explained',
+                        takeaway: 'A Roth IRA is a powerful retirement account that allows your investments to grow and be withdrawn completely tax-free in retirement.',
+                        content: 'A Roth IRA is an Individual Retirement Arrangement where you contribute with **after-tax dollars**. This means you don\'t get a tax deduction now, but your qualified withdrawals in retirement are 100% tax-free.\n\n**Key Benefits:**\n- **Tax-Free Growth:** All your investment gains are never taxed.\n- **Withdrawal Flexibility:** You can withdraw your contributions (not earnings) at any time, for any reason, without tax or penalty.\n- **No Required Minimum Distributions (RMDs):** Unlike traditional IRAs or 401(k)s, you are never forced to take money out.\n\nThere are income limits to contribute directly to a Roth IRA, but there are strategies like the "Backdoor Roth IRA" for high-income earners.',
+                        resources: [
+                            { type: 'youtube', title: 'Roth IRA Explained Simply', url: 'https://www.youtube.com/watch?v=qAlj_fE5gPA' },
+                            { type: 'article', title: 'Investopedia: Roth IRA Rules and Contribution Limits', url: 'https://www.investopedia.com/terms/r/rothira.asp' }
+                        ]
+                    },
+                    {
+                        id: 's6-2',
+                        title: 'Risk Tolerance',
+                        takeaway: 'Understanding your personal risk tolerance is key to building an investment portfolio that you can stick with through market ups and downs.',
+                        content: 'Risk tolerance is your ability and willingness to stomach a decline in the value of your investments. It\'s a crucial factor in determining your asset allocation (the mix of stocks, bonds, etc.).\n\n**Factors influencing risk tolerance:**\n- **Time Horizon:** The longer you have until you need the money, the more risk you can typically take.\n- **Financial Stability:** A stable job and an emergency fund allow for a higher risk tolerance.\n- **Emotional Temperament:** How would you react if your portfolio dropped 20%? Honesty here is critical.\n\nGenerally, stocks are considered higher risk/higher reward, while bonds are lower risk/lower reward. A common strategy is to have a higher allocation to stocks when you\'re young and gradually shift towards bonds as you approach retirement.',
+                        resources: [
+                            { type: 'youtube', title: 'What is Your Investment Risk Tolerance?', url: 'https://www.youtube.com/watch?v=8g3AEc-n-bA' },
+                            { type: 'article', title: 'Vanguard: Understanding investment risk', url: 'https://investor.vanguard.com/investor-resources-education/understanding-investment-risk' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'g7',
+                title: 'Financial Mindset',
+                sections: [
+                    {
+                        id: 's7-1',
+                        title: 'Overcoming Financial Anxiety',
+                        takeaway: 'Financial anxiety is common, but it can be managed by focusing on what you can control and taking small, consistent steps forward.',
+                        content: 'Worrying about money is stressful and can lead to avoidance. The key to overcoming it is to take action, no matter how small.\n\n**Strategies to Reduce Anxiety:**\n- **Create a Plan:** Having a budget and clear goals provides a roadmap and a sense of control.\n- **Automate Your Finances:** Set up automatic bill payments and savings transfers. This reduces the number of financial decisions you have to make.\n- **Educate Yourself:** The more you learn about personal finance, the more confident and less anxious you will feel. Use this library!\n- **Focus on Progress, Not Perfection:** You will make mistakes. What matters is that you learn from them and keep moving forward.',
+                        resources: [
+                            { type: 'youtube', title: 'How to Stop Stressing About Money', url: 'https://www.youtube.com/watch?v=8j2p0_s_3-o' },
+                            { type: 'article', title: 'CNBC: How to cope with financial anxiety', url: 'https://www.cnbc.com/select/how-to-cope-with-financial-anxiety/' }
+                        ]
+                    },
+                    {
+                        id: 's7-2',
+                        title: 'Avoiding Lifestyle Creep',
+                        takeaway: 'As your income increases, intentionally keeping your spending habits the same allows you to rapidly accelerate your wealth-building journey.',
+                        content: 'Lifestyle creep (or lifestyle inflation) is the tendency to increase your spending as your income grows. A pay raise feels great, but if you immediately upgrade your car, apartment, and wardrobe, you\'re no better off financially.\n\n**How to Avoid It:**\n- **Pre-commit Your Raises:** Before you even get the extra money, decide where it will go. A common rule is the 50/50 split: 50% to your goals (debt, savings, investments) and 50% to your lifestyle.\n- **Set Goals Beyond "Stuff":** Focus on big goals like financial independence, retiring early, or a major travel fund. These are more motivating than short-term consumption.\n- **Practice Gratitude:** Be thankful for what you have. This can reduce the desire to constantly seek happiness through spending.',
+                        resources: [
+                            { type: 'youtube', title: 'What is Lifestyle Creep?', url: 'https://www.youtube.com/watch?v=CLq-f03jV84' },
+                            { type: 'article', title: 'Forbes: How To Avoid Lifestyle Creep', url: 'https://www.forbes.com/advisor/personal-finance/how-to-avoid-lifestyle-creep/' }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // ==================== ICONS ====================
+        const Icons = {
+            Phoenix: () => (<img src="https://i.imgur.com/VXfQFab.png" alt="Fynix Logo" className="w-12 h-12" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/48x48/111827/FFFFFF?text=Logo'; }} />),
+            Book: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>),
+            Target: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>),
+            Calculator: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/></svg>),
+            Flame: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>),
+            Download: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>),
+            Upload: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>),
+            Lightbulb: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/></svg>),
+            Link: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></svg>),
+            Youtube: () => (<svg className="w-8 h-8 text-red-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>),
+            ExternalLink: () => (<svg className="w-8 h-8 text-blue-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>),
+            Wifi: () => (<svg className="w-6 h-6 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>),
+            Sparkles: () => (<svg className="w-5 h-5 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3L9.5 8.5L4 11l5.5 2.5L12 19l2.5-5.5L20 11l-5.5-2.5z"/></svg>),
+            Dashboard: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>,
+        };
+
+        // ==================== BACKGROUND ANIMATION ====================
+        const BackgroundCanvas = () => {
+            React.useEffect(() => {
+                const sketch = (p) => {
+                    let particles = [];
+                    p.setup = () => {
+                        let canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                        canvas.position(0, 0);
+                        canvas.style('position', 'fixed');
+                        canvas.style('z-index', '-1');
+                        canvas.id('bgCanvas');
+                        
+                        for (let i = 0; i < 30; i++) {
+                            particles.push({
+                                x: p.random(p.width),
+                                y: p.random(p.height),
+                                size: p.random(2, 5),
+                                speedX: p.random(-0.5, 0.5),
+                                speedY: p.random(-0.5, -1.5),
+                                opacity: p.random(50, 150)
+                            });
+                        }
+                    };
+                    
+                    p.draw = () => {
+                        p.clear();
+                        
+                        particles.forEach((particle, i) => {
+                            p.noStroke();
+                            p.fill(249, 115, 22, particle.opacity);
+                            p.ellipse(particle.x, particle.y, particle.size);
+                            
+                            particle.x += particle.speedX;
+                            particle.y += particle.speedY;
+                            particle.opacity -= 0.5;
+                            
+                            if (particle.y < -10 || particle.opacity <= 0) {
+                                particle.x = p.random(p.width);
+                                particle.y = p.height + 10;
+                                particle.opacity = p.random(50, 150);
+                            }
+                            
+                            if (particle.x < 0) particle.x = p.width;
+                            if (particle.x > p.width) particle.x = 0;
+                        });
+                    };
+                    
+                    p.windowResized = () => {
+                        p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    };
+                };
+                
+                new p5(sketch);
+            }, []);
+            
+            return null;
+        };
+        
+        // ==================== SETUP WIZARD ====================
+        const SetupWizard = ({ onComplete }) => {
+            const [step, setStep] = React.useState(1);
+            const [data, setData] = React.useState({
+                name: '',
+                income: '',
+                expenses: [],
+                savingsGoals: [],
+                transactions: [],
+            });
+
+            const handleInitialSubmit = (e) => {
+                e.preventDefault();
+                setStep(2);
+            };
+
+            const handleBudgetGenerated = (budget) => {
+                const newExpenses = budget.expenses.map(e => ({ id: Date.now() + Math.random(), name: e.category, monthlyAmount: e.amount }));
+                const newSavings = budget.savings.map(s => ({ id: Date.now() + Math.random(), name: s.category, goal: s.amount, saved: 0 }));
+                const finalData = { ...data, expenses: newExpenses, savingsGoals: newSavings };
+                onComplete(finalData);
+            };
+
+            if (step === 1) {
+                return (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <div className="text-center mb-6">
+                                <div className="flex justify-center"><Icons.Phoenix /></div>
+                                <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent mt-4">
+                                    Welcome to Fynix
+                                </h2>
+                                <p className="text-gray-400 mt-2">Let's set up your financial profile to get started.</p>
+                            </div>
+                            
+                            <form onSubmit={handleInitialSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-2">Your Name</label>
+                                    <input
+                                        type="text"
+                                        value={data.name}
+                                        onChange={(e) => setData({...data, name: e.target.value})}
+                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:border-orange-500 focus:outline-none"
+                                        placeholder="Enter your name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-2">Monthly Income (After Tax)</label>
+                                    <input
+                                        type="number"
+                                        value={data.income}
+                                        onChange={(e) => setData({...data, income: e.target.value})}
+                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:border-orange-500 focus:outline-none"
+                                        placeholder="e.g., 3000"
+                                        required
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all"
+                                >
+                                    Next Step
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (step === 2) {
+                return <AIBudgetPlanner income={parseFloat(data.income) || 3000} onComplete={handleBudgetGenerated} onSkip={() => onComplete(data)} />;
+            }
+        };
+
+        // ==================== AI BUDGET PLANNER ====================
+        const AIBudgetPlanner = ({ income, onComplete, onSkip }) => {
+            const [isLoading, setIsLoading] = React.useState(false);
+            const [budget, setBudget] = React.useState(null);
+
+            const generateBudget = async () => {
+                setIsLoading(true);
+                const prompt = `Based on a monthly income of $${income}, create a simple budget using the 50/30/20 rule (50% needs, 30% wants, 20% savings/debt). Provide common expense categories and savings goals. Respond ONLY with a valid JSON object like {"expenses": [{"category": "Housing", "amount": 1000}, ...], "savings": [{"category": "Emergency Fund", "amount": 300}, ...]}. The total of all amounts must equal the income.`;
+                
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { 
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                        }
+                    };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    
+                    const result = await response.json();
+                    const text = result.candidates[0].content.parts[0].text;
+                    const parsedJson = JSON.parse(text);
+                    setBudget(parsedJson);
+
+                } catch (error) {
+                    console.error("Error generating budget:", error);
+                    onSkip();
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            
+            return (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="text-center mb-6">
+                            <div className="flex justify-center"><Icons.Sparkles /></div>
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent mt-4">
+                                AI Budget Planner
+                            </h2>
+                            <p className="text-gray-400 mt-2">Let's create a starting budget for your ${income.toLocaleString()} income.</p>
+                        </div>
+
+                        {budget ? (
+                            <div>
+                                <h3 className="text-lg font-semibold text-center mb-4">Here's a suggested plan:</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 className="font-bold text-orange-400">Monthly Expenses</h4>
+                                        <ul className="text-sm mt-2 space-y-1">
+                                            {budget.expenses.map(e => <li key={e.category} className="flex justify-between"><span>{e.category}</span> <span>${e.amount.toFixed(0)}</span></li>)}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-green-400">Savings & Goals</h4>
+                                        <ul className="text-sm mt-2 space-y-1">
+                                            {budget.savings.map(s => <li key={s.category} className="flex justify-between"><span>{s.category}</span> <span>${s.amount.toFixed(0)}</span></li>)}
+                                        </ul>
+                                    </div>
+                                </div>
+                                <button onClick={() => onComplete(budget)} className="w-full mt-8 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all">
+                                    Looks Good! Start My Plan
+                                </button>
+                                <button onClick={generateBudget} className="w-full text-center text-sm mt-2 text-gray-400 hover:text-white">Regenerate</button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center">
+                                <button onClick={generateBudget} disabled={isLoading} className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all disabled:opacity-50">
+                                    {isLoading ? 'Generating...' : '✨ Generate AI Budget Plan'}
+                                </button>
+                                <button onClick={onSkip} className="mt-4 text-gray-500 hover:text-gray-300">Skip and create my own</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+        
+        // ==================== DASHBOARD COMPONENTS ====================
+        const MyCards = ({ balance }) => (
+            <div className="glass p-6 rounded-xl shadow-lg">
+                <h3 className="text-lg font-semibold mb-4">My Card</h3>
+                <div className="p-5 rounded-lg text-white space-y-8 relative overflow-hidden h-48 flex flex-col justify-between bg-gradient-to-br from-gray-900 to-black">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10"><Icons.Phoenix /></div>
+                    <div className="relative z-10">
+                        <p className="text-sm opacity-80">Balance</p>
+                        <p className="text-2xl font-bold">${balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                    </div>
+                    <div className="flex justify-between items-center relative z-10">
+                        <p className="font-mono text-lg tracking-wider">•••• •••• •••• 1234</p>
+                        <Icons.Wifi />
+                    </div>
+                </div>
+            </div>
+        );
+
+        const BudgetHealth = ({ income, expenses }) => {
+            const totalExpenses = expenses.reduce((sum, e) => sum + e.monthlyAmount, 0);
+            const available = income - totalExpenses;
+            const ratio = income > 0 ? (totalExpenses / income) * 100 : 0;
+            
+            let status, statusClass, message;
+            if (ratio > 100) {
+                status = 'Over Budget';
+                statusClass = 'health-danger';
+                message = `Spending ${Math.abs(available).toLocaleString(undefined, {style:'currency', currency:'USD'})} more than income.`;
+            } else if (ratio > 85) {
+                status = 'Tight';
+                statusClass = 'health-warning';
+                message = 'Consider reducing expenses to increase your savings rate.';
+            } else {
+                status = 'Healthy';
+                statusClass = 'health-good';
+                message = `${available.toLocaleString(undefined, {style:'currency', currency:'USD'})} available for savings & goals.`;
+            }
+            
+            return (
+                <div className="glass rounded-xl p-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-lg font-semibold">Budget Health</h3>
+                        <div className={`px-3 py-1 rounded-full text-sm font-semibold ${statusClass}`}>{status}</div>
+                    </div>
+                    <p className="text-sm text-gray-400">{message}</p>
+                </div>
+            );
+        };
+
+        const DailyBreakdown = ({ expenses, income }) => {
+            const totalDailyExpenses = expenses.reduce((sum, e) => sum + (e.monthlyAmount / 30), 0);
+            const dailyIncome = income / 30;
+            const dailyBuffer = dailyIncome - totalDailyExpenses;
+
+            return (
+                <div className="glass rounded-xl p-4">
+                    <h3 className="text-lg font-semibold mb-2">Daily Breakdown</h3>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Daily Net</span>
+                        <span className={`font-bold text-lg ${dailyBuffer >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {dailyBuffer.toLocaleString(undefined, {style:'currency', currency:'USD'})}
+                        </span>
+                    </div>
+                </div>
+            );
+        };
+        
+        const MySavings = ({ goals, onAddGoal, onCoach }) => {
+            const [name, setName] = React.useState('');
+            const [goal, setGoal] = React.useState('');
+
+            const handleAdd = (e) => {
+                e.preventDefault();
+                if(!name || !goal || parseFloat(goal) <= 0) return;
+                onAddGoal({ name, goal: parseFloat(goal), saved: 0 });
+                setName(''); setGoal('');
+            };
+
+            return (
+                <div className="glass p-6 rounded-xl shadow-lg">
+                    <h3 className="text-lg font-semibold mb-4">My Savings</h3>
+                    <div className="space-y-4 max-h-48 overflow-y-auto pr-2 mb-4">
+                        {goals.length > 0 ? goals.map(g => {
+                            const progress = g.goal > 0 ? ((g.saved || 0) / g.goal) * 100 : 0;
+                            return (
+                                <div key={g.id}>
+                                    <div className="flex justify-between items-center text-sm mb-1">
+                                        <span className="font-semibold">{g.name}</span>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-gray-400">${(g.saved || 0).toFixed(0)} / ${g.goal.toFixed(0)}</span>
+                                            <button onClick={() => onCoach(g)} title="Get AI Coaching" className="text-yellow-400 hover:text-yellow-300">✨</button>
+                                        </div>
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2.5"><div className="bg-orange-500 h-2.5 rounded-full" style={{width: `${progress}%`, transition: 'width 0.5s ease'}}></div></div>
+                                </div>
+                            );
+                        }) : <p className="text-sm text-gray-500 text-center py-4">No savings goals yet.</p>}
+                    </div>
+                     <form onSubmit={handleAdd} className="space-y-3 border-t border-gray-700 pt-4">
+                         <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="New Goal Name" className="w-full bg-gray-700 border-gray-600 rounded-md px-3 py-2" required />
+                         <div className="flex items-center space-x-2">
+                            <input type="number" value={goal} onChange={e => setGoal(e.target.value)} placeholder="Amount ($)" className="w-full bg-gray-700 border-gray-600 rounded-md px-3 py-2" required />
+                            <button type="submit" className="bg-orange-600 hover:bg-orange-700 text-white font-bold p-2 rounded-md transition-colors">Add</button>
+                         </div>
+                    </form>
+                </div>
+            );
+        };
+
+        // ==================== MAIN APP ====================
+        const App = () => {
+            const [userData, setUserData] = React.useState(null);
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [coachModal, setCoachModal] = React.useState({ isOpen: false, tip: '', goalName: '' });
+            const [isCoachLoading, setIsCoachLoading] = React.useState(false);
+
+            React.useEffect(() => {
+                const savedData = localStorage.getItem('fynix-data-v1');
+                if (savedData) {
+                    setUserData(JSON.parse(savedData));
+                }
+            }, []);
+
+            const handleDataUpdate = (newData) => {
+                setUserData(newData);
+                localStorage.setItem('fynix-data-v1', JSON.stringify(newData));
+            };
+            
+            const handleAddSavingGoal = (goal) => {
+                const newGoal = { id: Date.now(), ...goal };
+                handleDataUpdate({ ...userData, savingsGoals: [...userData.savingsGoals, newGoal] });
+            };
+
+            const handleCoaching = async (goal) => {
+                setIsCoachLoading(true);
+                setCoachModal({ isOpen: true, tip: '', goalName: goal.name });
+                const prompt = `I'm working on a savings goal: "${goal.name}". I want to save $${goal.goal.toFixed(2)} and I've currently saved $${(goal.saved || 0).toFixed(2)}. My monthly income is $${userData.income}. Act as a friendly financial coach and give me one short, creative, and encouraging tip to help me reach my goal faster.`;
+
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error("API Error");
+                    const result = await response.json();
+                    const tip = result.candidates[0].content.parts[0].text;
+                    setCoachModal({ isOpen: true, tip: tip, goalName: goal.name });
+                } catch (error) {
+                    console.error("Coaching error:", error);
+                    setCoachModal({ isOpen: true, tip: 'Could not get a tip right now. Try saving an extra $5 this week!', goalName: goal.name });
+                } finally {
+                    setIsCoachLoading(false);
+                }
+            };
+
+            if (!userData) {
+                return <SetupWizard onComplete={handleDataUpdate} />;
+            }
+            
+            const totalExpenses = userData.expenses.reduce((sum, e) => sum + e.monthlyAmount, 0);
+            const balance = userData.income - totalExpenses;
+
+            const navItems = [
+                { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
+                { id: 'guides', label: 'Guides', icon: Icons.Book },
+                { id: 'tools', label: 'Tools', icon: Icons.Calculator },
+            ];
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row">
+                    <BackgroundCanvas />
+                    {coachModal.isOpen && (
+                        <div className="modal-overlay" onClick={() => setCoachModal({ isOpen: false, tip: '', goalName: '' })}>
+                            <div className="modal-content text-center" onClick={(e) => e.stopPropagation()}>
+                                <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4">AI Coach for "{coachModal.goalName}"</h3>
+                                {isCoachLoading ? (
+                                    <p>Thinking of a great tip...</p>
+                                ) : (
+                                    <p className="text-gray-300">{coachModal.tip}</p>
+                                )}
+                                <button onClick={() => setCoachModal({ isOpen: false, tip: '', goalName: '' })} className="mt-6 bg-orange-600 px-4 py-2 rounded-lg">Close</button>
+                            </div>
+                        </div>
+                    )}
+                    <nav className="desktop-nav glass md:w-64 p-4 flex-shrink-0 z-10">
+                        <div className="flex items-center gap-3 mb-8">
+                            <Icons.Phoenix />
+                            <span className="text-xl font-bold">Fynix</span>
+                        </div>
+                        <div className="space-y-2">
+                            {navItems.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm font-semibold ${
+                                        activeTab === item.id ? 'tab-active' : 'hover:bg-gray-800/50'
+                                    }`}
+                                >
+                                    <item.icon />
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    </nav>
+
+                    <main className="flex-1 p-4 md:p-6 main-content">
+                        <h1 className="text-2xl md:text-3xl font-bold mb-4">
+                            Welcome back, {userData.name}!
+                        </h1>
+                        
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-4">
+                                <BudgetHealth income={userData.income} expenses={userData.expenses} />
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    <div className="lg:col-span-2 space-y-4">
+                                       <MyCards balance={balance} />
+                                       <DailyBreakdown expenses={userData.expenses} income={userData.income} />
+                                    </div>
+                                    <MySavings goals={userData.savingsGoals} onAddGoal={handleAddSavingGoal} onCoach={handleCoaching} />
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'guides' && (
+                           <div>Guides Content Here</div>
+                        )}
+
+                        {activeTab === 'tools' && (
+                           <div>Tools Content Here</div>
+                        )}
+                    </main>
+
+                    <nav className="mobile-nav">
+                        {navItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id)}
+                                className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors w-1/3 ${
+                                    activeTab === item.id ? 'text-orange-400' : 'text-gray-400'
+                                }`}
+                            >
+                                <item.icon />
+                                <span className="text-xs mt-1">{item.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+            );
+        };
+        
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>

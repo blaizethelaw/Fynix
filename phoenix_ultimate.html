@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Fynix — Rise From Financial Ashes</title>
+
+  <!-- Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Removed p5.js (caused ReferenceError in some environments); background now uses plain Canvas API. -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <!-- React -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --phoenix-orange: #f97316;
+      --phoenix-red: #ea580c;
+      --phoenix-yellow: #f59e0b;
+      --phoenix-gold: #fbbf24;
+      --phoenix-dark: #0a0e27;
+      --glass-white: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #111827 100%);
+      color: white; min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+
+    #bgCanvas { position: fixed; top: 0; left: 0; z-index: 0; opacity: .28; pointer-events: none; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1f2937; }
+    ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+    /* Animations */
+    @keyframes phoenixRise { 0%,100%{ transform: translateY(0) scale(1);} 50%{ transform: translateY(-5px) scale(1.02);} }
+    @keyframes glow { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.2);} }
+    @keyframes slideIn { from{ opacity:0; transform: translateX(-20px);} to{ opacity:1; transform: translateX(0);} }
+    @keyframes fadeIn { from{ opacity:0;} to{ opacity:1;} }
+    @keyframes slideUp { from{ transform: translateY(20px); opacity:0;} to{ transform: translateY(0); opacity:1;} }
+
+    .phoenix-glow { animation: glow 3s ease-in-out infinite; }
+    .phoenix-rise { animation: phoenixRise 3s ease-in-out infinite; }
+    .slide-in { animation: slideIn .5s ease; }
+    .fade-in { animation: fadeIn .3s ease; }
+
+    /* Glass */
+    .glass { background: var(--glass-white); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--glass-border); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.95); display:flex; align-items:center; justify-content:center; z-index:9999; animation: fadeIn .3s ease; padding:1rem; }
+    .modal-content { background: linear-gradient(135deg,#1f2937,#111827); padding:1.25rem; border-radius:1rem; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; border:1px solid var(--glass-border); animation: slideUp .3s ease; }
+
+    /* Bottom mobile nav */
+    .mobile-nav { position: fixed; bottom:0; left:0; right:0; background: rgba(17,24,39,.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top:1px solid rgba(255,255,255,.1); z-index:1000; padding:.5rem; display:none; }
+    @media (max-width: 768px){ .mobile-nav{ display:flex; justify-content:space-around; align-items:center;} .desktop-nav{ display:none !important;} .main-content{ padding-bottom:70px !important;} }
+
+    /* Tabs */
+    .tab-active { background: linear-gradient(135deg, var(--phoenix-orange), var(--phoenix-red)); color: white; }
+
+    /* Progress bars */
+    .progress-bar { background: rgba(255,255,255,.1); border-radius:10px; overflow:hidden; height:8px; }
+    .progress-fill { background: linear-gradient(90deg, var(--phoenix-orange), var(--phoenix-yellow)); height:100%; transition: width .5s ease; position:relative; overflow:hidden; }
+    .progress-fill::after { content:""; position:absolute; inset:0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent); animation: shimmer 2s infinite; }
+    @keyframes shimmer { 0% { transform: translateX(-100%);} 100% { transform: translateX(100%);} }
+
+    /* Health chips */
+    .health-good { background: linear-gradient(135deg, #10b981, #059669); }
+    .health-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .health-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+    /* Utilities */
+    button,.btn { min-height:44px; min-width:44px; touch-action: manipulation; }
+    input,select,textarea { font-size:16px; }
+    .text-responsive { font-size: clamp(.875rem, 2vw, 1rem); }
+    .heading-responsive { font-size: clamp(1.5rem, 4vw, 2.5rem); }
+    .safe-top { padding-top: env(safe-area-inset-top); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // ==================== ICONS ====================
+    const Svg = ({children, className="w-5 h-5"}) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+    );
+
+    const Icons = {
+      Phoenix: () => (
+        <svg viewBox="0 0 64 64" className="w-10 h-10 md:w-12 md:h-12 phoenix-rise">
+          <defs>
+            <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+              <stop stopColor="#f97316" offset="0"/>
+              <stop stopColor="#f59e0b" offset="1"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#g)" d="M32 6c7 9-1 13-6 18 7-2 11-4 13-10 2 7 0 10-4 14 9-2 13-8 13-16 8 9 3 20-4 26 4 1 8-1 10-4-1 9-8 14-14 16 2 2 6 3 8 3-6 5-14 4-19 0-9 2-18-2-19-11 3 3 7 4 11 3-7-6-12-18-2-28-1 7 3 12 10 14-4-5-6-9-3-15 1-3 4-5 6-6Z"/>
+        </svg>
+      ),
+      Flame: () => (<Svg className="w-5 h-5 text-orange-400"><path d="M14 3C9 6 7 10 7 13a5 5 0 1 0 10 0c0-3-1-5-3-7 0 3-1 4-3 5 0-3 1-5 3-8Z"/></Svg>),
+      Check: () => (<Svg className="w-4 h-4"><polyline points="20 6 9 17 4 12"/></Svg>),
+      Lightbulb: () => (<Svg className="text-yellow-400"><path d="M9 18h6M12 2a7 7 0 0 1 4 13c-1 1-1 2-1 3H9c0-1 0-2-1-3A7 7 0 0 1 12 2Z"/></Svg>),
+      Book: () => (<Svg><path d="M4 19a4 4 0 0 1 4-4h12v6H8a4 4 0 0 1-4-4Zm0-10a4 4 0 0 1 4-4h12v8H8a4 4 0 0 1-4-4Z"/></Svg>),
+      Download: () => (<Svg><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></Svg>),
+      Upload: () => (<Svg><path d="M12 21V9"/><polyline points="7 12 12 7 17 12"/><path d="M5 21h14"/></Svg>),
+      Menu: () => (<Svg><path d="M4 6h16M4 12h16M4 18h16"/></Svg>),
+      Target: () => (<Svg className="text-green-400"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></Svg>),
+      Plus: () => (<Svg><path d="M12 5v14M5 12h14"/></Svg>),
+      Trash: () => (<Svg><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Svg>),
+      Wallet: () => (<Svg><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M21 10h-6a2 2 0 0 1 0-4h6"/></Svg>),
+      Youtube: () => (<Svg className="text-red-500"><path d="M22 12s0-5-1-6-4-1-9-1-8 0-9 1-1 6-1 6 0 5 1 6 4 1 9 1 8 0 9-1 1-6 1-6Z"/><polygon points="10 15 15 12 10 9"/></Svg>),
+      ExternalLink: () => (<Svg><path d="M18 3h3v3M21 3l-9 9"/><path d="M5 11v10h10"/></Svg>),
+      Wallet2: () => (<Svg><path d="M3 7h14a4 4 0 0 1 4 4v6a3 3 0 0 1-3 3H5a2 2 0 0 1-2-2Z"/></Svg>),
+    };
+
+    // ==================== HELPERS ====================
+    const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const formatCurrency = (n=0) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+
+    // ==================== BACKGROUND CANVAS (no p5) ====================
+    const BackgroundCanvas = () => {
+      React.useEffect(() => {
+        const canvas = document.getElementById('bgCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        let rafId;
+        let particles = [];
+        const DPR = Math.max(1, window.devicePixelRatio || 1);
+
+        const resize = () => {
+          const w = window.innerWidth;
+          const h = window.innerHeight;
+          canvas.width = Math.floor(w * DPR);
+          canvas.height = Math.floor(h * DPR);
+          canvas.style.width = w + 'px';
+          canvas.style.height = h + 'px';
+          ctx.setTransform(1,0,0,1,0,0);
+          ctx.scale(DPR, DPR);
+        };
+        const initParticles = () => {
+          particles = Array.from({ length: 120 }).map(() => ({
+            x: Math.random() * window.innerWidth,
+            y: window.innerHeight + Math.random() * 200,
+            s: Math.random() * 2 + 0.5,
+            spd: Math.random() * 0.8 + 0.2,
+          }));
+        };
+
+        const draw = () => {
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          for (const pt of particles) {
+            pt.y -= pt.spd;
+            pt.x += Math.sin((pt.y + pt.x) * 0.002) * 0.5;
+            if (pt.y < -50) {
+              pt.y = window.innerHeight + 50;
+              pt.x = Math.random() * window.innerWidth;
+            }
+            const g = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, 60);
+            g.addColorStop(0, 'rgba(249,115,22,0.35)');
+            g.addColorStop(1, 'rgba(234,88,12,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.ellipse(pt.x, pt.y, 60 * pt.s, 60 * pt.s, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          rafId = requestAnimationFrame(draw);
+        };
+
+        resize();
+        initParticles();
+        draw();
+        window.addEventListener('resize', resize);
+        window.__fynix_bg_running = true; // used by self-tests
+
+        return () => { cancelAnimationFrame(rafId); window.removeEventListener('resize', resize); };
+      }, []);
+      return null;
+    };
+
+    // ==================== SETUP WIZARD ====================
+    const SetupWizard = ({ onComplete }) => {
+      const [step, setStep] = React.useState(1);
+      const [data, setData] = React.useState({ name: '', income: '', incomeSource: 'salary', goal: 'emergency' });
+
+      const submit = (e) => {
+        e.preventDefault();
+        if (step < 3) { setStep(step+1); return; }
+        onComplete({
+          name: data.name.trim() || 'Friend',
+          income: parseFloat(data.income || 0),
+          incomeSource: data.incomeSource,
+          goal: data.goal,
+          expenses: [],
+          savingsGoals: data.goal === 'emergency' ? [{ id: uid(), name: 'Emergency Fund', goal: 1000, saved: 0, createdAt: new Date().toISOString() }] : [],
+          createdAt: new Date().toISOString(),
+        });
+      };
+
+      return (
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+          <div className="modal-content w-full max-w-xl">
+            <h1 className="text-2xl md:text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-yellow-500 mb-2">Fynix</h1>
+            <p className="text-center text-gray-300 mb-4">Rise from financial ashes. Let’s set up the basics.</p>
+            <form onSubmit={submit} className="space-y-4">
+              {step === 1 && (
+                <div className="space-y-3 fade-in">
+                  <label className="block">
+                    <span className="text-sm text-gray-300">Your name</span>
+                    <input value={data.name} onChange={(e)=>setData({ ...data, name: e.target.value })} className="mt-1 w-full bg-gray-800 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Phoenix" required />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm text-gray-300">Monthly income</span>
+                    <input type="number" min="0" step="0.01" value={data.income} onChange={(e)=>setData({ ...data, income: e.target.value })} className="mt-1 w-full bg-gray-800 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="2400" required />
+                  </label>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-3 fade-in">
+                  <label className="block">
+                    <span className="text-sm text-gray-300">Income source</span>
+                    <select value={data.incomeSource} onChange={e=>setData({ ...data, incomeSource: e.target.value })} className="mt-1 w-full bg-gray-800 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                      <option value="salary">Salary</option>
+                      <option value="hourly">Hourly</option>
+                      <option value="benefits">Benefits</option>
+                      <option value="contract">Contract/Freelance</option>
+                      <option value="multiple">Multiple Sources</option>
+                    </select>
+                  </label>
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="space-y-4 fade-in">
+                  <h3 className="text-xl font-semibold">Your primary goal</h3>
+                  {[
+                    { value: 'emergency', label: '🛡️ Build Emergency Fund', desc: '$1,000 safety net' },
+                    { value: 'debt', label: '💳 Eliminate Debt', desc: 'Become debt‑free' },
+                    { value: 'credit', label: '📈 Rebuild Credit', desc: 'Reach 700+ score' },
+                    { value: 'save', label: '💰 Save for Goal', desc: 'Specific purchase' },
+                    { value: 'invest', label: '🚀 Start Investing', desc: 'Build wealth' },
+                  ].map(opt => (
+                    <label key={opt.value} className="block">
+                      <input type="radio" name="goal" value={opt.value} checked={data.goal===opt.value} onChange={(e)=>setData({ ...data, goal: e.target.value })} className="sr-only"/>
+                      <div className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${data.goal===opt.value? 'border-orange-500 bg-orange-500/10':'border-gray-700 hover:border-gray-600'}`}>
+                        <div className="font-semibold">{opt.label}</div>
+                        <div className="text-gray-400 text-sm">{opt.desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              <button type="submit" className="w-full mt-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all">
+                {step < 3 ? 'Continue' : 'Start My Fynix Journey 🔥'}
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    // ==================== DASHBOARD WIDGETS ====================
+    const Stat = ({label, value, sub}) => (
+      <div className="glass rounded-xl p-4">
+        <div className="text-xs text-gray-400">{label}</div>
+        <div className="text-xl font-bold">{value}</div>
+        {sub && <div className="text-xs text-gray-400 mt-1">{sub}</div>}
+      </div>
+    );
+
+    const ExpensesList = ({ expenses, onAdd, onRemove }) => {
+      const [showForm, setShowForm] = React.useState(false);
+      const [form, setForm] = React.useState({ name:'', amount:'', category:'Bills', dueDay: 1 });
+      const submit = (e) => {
+        e.preventDefault();
+        if (!form.name || !form.amount) return;
+        onAdd({ id: uid(), name: form.name, amount: parseFloat(form.amount), category: form.category, dueDay: form.dueDay, createdAt: new Date().toISOString() });
+        setForm({ name:'', amount:'', category:'Bills', dueDay:1 }); setShowForm(false);
+      };
+      return (
+        <div className="glass rounded-xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base md:text-lg font-semibold flex items-center gap-2"><Icons.Wallet/> Expenses</h3>
+            <button onClick={()=>setShowForm(v=>!v)} className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 rounded-lg flex items-center gap-1 text-sm"><Icons.Plus/><span className="hidden sm:inline">Add</span></button>
+          </div>
+          {showForm && (
+            <form onSubmit={submit} className="mb-4 p-3 bg-gray-800/50 rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2 fade-in">
+              <input placeholder="Name" className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} required/>
+              <input type="number" step="0.01" placeholder="Amount" className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})} required/>
+              <select className="px-3 py-2 bg-gray-700 rounded-lg" value={form.category} onChange={e=>setForm({...form, category:e.target.value})}>
+                <option>Bills</option><option>Food</option><option>Transport</option><option>Subscriptions</option><option>Other</option>
+              </select>
+              <button className="px-3 py-2 bg-green-600 hover:bg-green-700 rounded-lg" type="submit">Add Expense</button>
+            </form>
+          )}
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {expenses.map(exp => (
+              <div key={exp.id} className="bg-gray-800/50 rounded-lg p-3 flex justify-between items-center group hover:bg-gray-800/70 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate">{exp.name}</div>
+                  <div className="text-xs text-gray-400">{exp.category} • Due: {exp.dueDay || '-'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right"><div className="font-bold text-base md:text-lg">{formatCurrency(exp.amount)}</div><div className="text-xs text-gray-400">{formatCurrency((exp.amount||0)/30)}/day</div></div>
+                  <button onClick={()=>onRemove(exp.id)} className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-300 transition-all"><Icons.Trash/></button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {expenses.length===0 && (
+            <div className="text-center py-8 text-gray-500"><Icons.Wallet/><p className="mt-2 text-sm">No expenses yet</p></div>
+          )}
+        </div>
+      );
+    };
+
+    const SavingsGoals = ({ goals, onAdd, onUpdate, onRemove }) => {
+      const [showForm, setShowForm] = React.useState(false);
+      const [newGoal, setNewGoal] = React.useState({ name:'', goal:'' });
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onAdd({ id: uid(), name: newGoal.name, goal: parseFloat(newGoal.goal), saved: 0, createdAt: new Date().toISOString() });
+        setNewGoal({ name:'', goal:'' }); setShowForm(false);
+      };
+      return (
+        <div className="glass rounded-xl p-4 md:p-6">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base md:text-lg font-semibold flex items-center gap-2"><Icons.Target/> Savings</h3>
+            <button onClick={()=>setShowForm(s=>!s)} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg flex items-center gap-1 text-sm"><Icons.Plus/><span className="hidden sm:inline">Add</span></button>
+          </div>
+          {showForm && (
+            <form onSubmit={handleSubmit} className="mb-4 p-3 bg-gray-800/50 rounded-lg space-y-3 fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input type="text" placeholder="Goal name" value={newGoal.name} onChange={(e)=>setNewGoal({ ...newGoal, name:e.target.value })} className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" required/>
+                <input type="number" step="0.01" placeholder="Target amount" value={newGoal.goal} onChange={(e)=>setNewGoal({ ...newGoal, goal:e.target.value })} className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" required/>
+              </div>
+              <button type="submit" className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors text-sm">Create Goal</button>
+            </form>
+          )}
+
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {goals.map(goal => {
+              const progress = goal.goal > 0 ? (goal.saved/goal.goal)*100 : 0;
+              return (
+                <div key={goal.id} className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-semibold text-sm">{goal.name}</h4>
+                      <p className="text-xs text-gray-400">{formatCurrency(goal.saved)} / {formatCurrency(goal.goal)}</p>
+                    </div>
+                    <div className="text-lg font-bold text-green-400">{progress.toFixed(0)}%</div>
+                  </div>
+                  <div className="progress-bar mb-2"><div className="progress-fill" style={{ width: `${Math.min(progress, 100)}%` }} /></div>
+                  <div className="flex gap-2">
+                    <button onClick={()=>{ const amount=parseFloat(prompt('Add to savings:')||0); if(amount>0) onUpdate(goal.id, { saved: (goal.saved||0)+amount }); }} className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs">Add Funds</button>
+                    <button onClick={()=>onRemove(goal.id)} className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded text-xs">Remove</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {goals.length===0 && (
+            <div className="text-center py-8 text-gray-500"><Icons.Target/><p className="mt-2 text-sm">No savings goals yet</p><p className="text-xs">Start with $1,000 emergency fund!</p></div>
+          )}
+        </div>
+      );
+    };
+
+    const BudgetChart = ({ dataPoints }) => {
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        if (!ref.current) return;
+        const ctx = ref.current.getContext('2d');
+        const chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: dataPoints.map(d=>d.date),
+            datasets: [{
+              label: 'Net (Income - Expenses)',
+              data: dataPoints.map(d=>d.net),
+              borderWidth: 2,
+              fill: true,
+              tension: .3
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: { x: { ticks:{ display: false } }, y: { ticks:{ callback:(v)=>formatCurrency(v)} } }
+          }
+        });
+        return () => chart.destroy();
+      }, [dataPoints]);
+      return (
+        <div className="glass rounded-xl p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-semibold mb-3">Cash Flow (last 8 weeks)</h3>
+          <canvas ref={ref} height="120"></canvas>
+        </div>
+      );
+    };
+
+    // ==================== LIBRARY ====================
+    const Library = ({ onTakeAction }) => {
+      const topics = [
+        {
+          group: 'Foundations',
+          items: [
+            { id:'budget101', title:'Budgeting 101', takeaway:'Track income and expenses weekly to regain control.', content:'Start with a simple 50/30/20 split. Use envelopes or categories. Automate bills when possible.', resources:[{title:'Zero‑based Budgeting', url:'https://www.youtube.com/watch?v=Zc9d5Wviw1k', type:'youtube'}] },
+            { id:'emergency', title:'Emergency Fund', takeaway:'Build a $1,000 starter fund to break the debt cycle.', content:'Open a separate savings account. Name it “Emergency Fund.” Fund it using windfalls and small weekly transfers.', actionable:{ type:'add_saving', name:'Emergency Fund', goal:1000 } },
+          ]
+        },
+        {
+          group: 'Credit & Debt',
+          items: [
+            { id:'credit', title:'Rebuild Credit', takeaway:'On‑time payments drive scores. Automate minimums.', content:'Keep utilization <30%. Consider a secured card; pay in full monthly.' },
+            { id:'snowball', title:'Debt Snowball', takeaway:'Pay smallest balance first to build momentum.', content:'List debts smallest to largest. Pay minimums on all; throw extra at the smallest.' }
+          ]
+        }
+      ];
+
+      const [active, setActive] = React.useState(null);
+
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <aside className="glass rounded-xl p-4 lg:col-span-1">
+            <h3 className="font-semibold mb-3">Topics</h3>
+            {topics.map(sec => (
+              <div key={sec.group} className="mb-3">
+                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">{sec.group}</div>
+                <ul className="space-y-1">
+                  {sec.items.map(s => (
+                    <li key={s.id}>
+                      <button onClick={()=>setActive(s)} className={`w-full text-left px-3 py-2 rounded-lg ${active && active.id===s.id ? 'bg-orange-600 text-white':'hover:bg-gray-700'}`}>{s.title}</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </aside>
+
+          <div className="glass rounded-xl p-6 lg:col-span-3 min-h-[60vh]">
+            {active ? (
+              <div>
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500 mb-4">{active.title}</h2>
+                <div className="bg-gray-900/50 border border-orange-500/30 p-4 rounded-lg mb-6 flex items-start gap-4">
+                  <Icons.Lightbulb />
+                  <div>
+                    <h4 className="font-bold text-orange-400">Key Takeaway</h4>
+                    <p className="text-gray-300">{active.takeaway}</p>
+                  </div>
+                </div>
+                <div className="text-gray-300 space-y-3">
+                  {String(active.content||'').split('\n\n').map((p,i)=>(<p key={i}>{p}</p>))}
+                </div>
+                {active.resources && (
+                  <div className="mt-6 border-t border-gray-700 pt-4">
+                    <h3 className="text-lg font-semibold mb-3 text-orange-400">Further Learning</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {active.resources.map(res => (
+                        <a key={res.url} href={res.url} target="_blank" rel="noopener noreferrer" className="bg-gray-700/50 p-4 rounded-lg flex items-center gap-4 hover:bg-gray-700">
+                          {res.type==='youtube'? <Icons.Youtube/> : <Icons.ExternalLink/>}
+                          <div>
+                            <p className="font-semibold text-sm">{res.title}</p>
+                            <p className="text-xs text-gray-400">{res.type==='youtube' ? 'Watch on YouTube' : 'Read Article'}</p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {active.actionable && (
+                  <div className="mt-6 border-t border-gray-700 pt-4">
+                    <button onClick={()=>onTakeAction(active.actionable)} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Take Action: Add "{active.actionable.name}" to Dashboard</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                <Icons.Book />
+                <h2 className="text-xl font-semibold mt-4">Welcome to the Fynix Library</h2>
+                <p className="mt-2 text-sm max-w-md">Select a topic from the sidebar to learn key strategies for financial recovery.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // ==================== JOURNEY ====================
+    const Journey = ({ userData }) => {
+      const milestones = [
+        { id:'setup', title:'Set up income and budget', complete: (userData.income||0) > 0 },
+        { id:'emergency', title:'Create emergency fund goal', complete: (userData.savingsGoals||[]).some(g=>String(g.name).toLowerCase().includes('emergency')) },
+        { id:'expenses', title:'Track all monthly expenses', complete: (userData.expenses||[]).length >= 3 },
+        { id:'savings', title:'Save first $100', complete: (userData.savingsGoals||[]).reduce((s,g)=>s+(g.saved||0),0) >= 100 },
+        { id:'buffer', title:'Achieve positive cash flow', complete: (userData.income||0) > (userData.expenses||[]).reduce((s,e)=>s+(e.amount||0),0) },
+        { id:'goals', title:'Set 3 savings goals', complete: (userData.savingsGoals||[]).length >= 3 },
+      ];
+      const completedCount = milestones.filter(m=>m.complete).length;
+      const progress = (completedCount / milestones.length) * 100;
+      return (
+        <div className="glass rounded-xl p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2"><Icons.Flame/> Your Fynix Journey</h3>
+          <div className="mb-4">
+            <div className="flex justify-between text-sm mb-2"><span>Progress</span><span>{completedCount} / {milestones.length} Complete</span></div>
+            <div className="progress-bar h-3"><div className="progress-fill" style={{ width: `${progress}%` }}/></div>
+          </div>
+          <div className="space-y-3">
+            {milestones.map(m => (
+              <div key={m.id} className={`p-3 rounded-lg flex items-center gap-3 transition-all ${m.complete? 'bg-green-500/10 border border-green-500/30':'bg-gray-800/50'}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${m.complete? 'bg-green-500':'border-2 border-gray-600'}`}>{m.complete && <Icons.Check/>}</div>
+                <span className={`text-sm ${m.complete? 'line-through text-gray-500':''}`}>{m.title}</span>
+              </div>
+            ))}
+          </div>
+          {progress===100 && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 rounded-lg text-center">
+              <p className="text-lg font-semibold">🎉 Congratulations!</p>
+              <p className="text-sm text-gray-300 mt-1">You've completed the Fynix Foundation!</p>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // ==================== MAIN APP ====================
+    const App = () => {
+      const [userData, setUserData] = React.useState(null);
+      const [activeTab, setActiveTab] = React.useState('dashboard');
+      const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+      React.useEffect(()=>{ const saved=localStorage.getItem('fynix-ultimate-data'); if(saved){ try{ setUserData(JSON.parse(saved)); }catch{ /* ignore */ } } }, []);
+
+      const handleSetupComplete = (data) => { setUserData(data); localStorage.setItem('fynix-ultimate-data', JSON.stringify(data)); };
+
+      const updateUserData = (updates) => {
+        const newData = { ...userData, ...updates };
+        setUserData(newData);
+        localStorage.setItem('fynix-ultimate-data', JSON.stringify(newData));
+      };
+
+      const handleTakeAction = (action) => {
+        if (action.type === 'add_saving') {
+          const newGoal = { id: uid(), name: action.name, goal: action.goal, saved: 0, createdAt: new Date().toISOString() };
+          updateUserData({ savingsGoals: [ ...(userData.savingsGoals || []), newGoal ] });
+          setActiveTab('dashboard');
+        }
+      };
+
+      const exportData = () => {
+        const dataStr = JSON.stringify(userData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        const name = `fynix-${new Date().toISOString().slice(0,10)}.json`;
+        const a = document.createElement('a'); a.href = dataUri; a.download = name; a.click();
+      };
+
+      const importData = (e) => {
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => { try { const data = JSON.parse(evt.target.result); setUserData(data); localStorage.setItem('fynix-ultimate-data', JSON.stringify(data)); alert('Data imported successfully!'); } catch { alert('Invalid file format'); } };
+        reader.readAsText(file);
+      };
+
+      if (!userData) return <SetupWizard onComplete={handleSetupComplete}/>;
+
+      const totalExpenses = (userData.expenses||[]).reduce((s,e)=>s+(e.amount||0),0);
+      const net = (userData.income||0) - totalExpenses;
+
+      const dataPoints = Array.from({length: 8}).map((_,i)=>({ date: `W${i+1}`, net: net + (Math.sin(i)*200) }));
+
+      return (
+        <>
+          <BackgroundCanvas />
+          <div className="relative z-10 min-h-screen main-content">
+            <div className="max-w-7xl mx-auto px-4 py-4 md:px-6 md:py-6 safe-top">
+              {/* Header */}
+              <header className="glass rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Icons.Phoenix/>
+                    <div>
+                      <h1 className="heading-responsive font-bold bg-gradient-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent">Fynix</h1>
+                      <p className="text-gray-400 text-xs md:text-sm">Welcome, {userData.name}! 🔥</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={exportData} className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors hidden sm:block" title="Export data"><Icons.Download/></button>
+                    <label className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors cursor-pointer hidden sm:block" title="Import data">
+                      <Icons.Upload/>
+                      <input type="file" accept=".json" onChange={importData} className="hidden"/>
+                    </label>
+                    <button onClick={()=>setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors md:hidden" title="Menu"><Icons.Menu/></button>
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="mt-4 desktop-nav">
+                  <div className="inline-flex rounded-lg overflow-hidden bg-gray-800/50">
+                    {['dashboard','library','settings'].map(t => (
+                      <button key={t} onClick={()=>setActiveTab(t)} className={`px-4 py-2 text-sm ${activeTab===t? 'tab-active' : 'hover:bg-gray-700'}`}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>
+                    ))}
+                  </div>
+                </div>
+              </header>
+
+              {/* Content */}
+              {activeTab==='dashboard' && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Stat label="Income (monthly)" value={formatCurrency(userData.income||0)} sub={userData.incomeSource}/>
+                    <Stat label="Expenses (monthly)" value={formatCurrency(totalExpenses)}/>
+                    <Stat label="Net" value={<span className={`${net>=0?'text-green-400':'text-red-400'}`}>{formatCurrency(net)}</span>}/>
+                  </div>
+                  <Journey userData={userData}/>
+                  <BudgetChart dataPoints={dataPoints}/>
+                  <ExpensesList
+                    expenses={userData.expenses||[]}
+                    onAdd={(exp)=>updateUserData({ expenses: [ ...(userData.expenses||[]), exp ] })}
+                    onRemove={(id)=>updateUserData({ expenses: (userData.expenses||[]).filter(e=>e.id!==id) })}
+                  />
+                  <SavingsGoals
+                    goals={userData.savingsGoals||[]}
+                    onAdd={(g)=>updateUserData({ savingsGoals: [ ...(userData.savingsGoals||[]), g ] })}
+                    onUpdate={(id,changes)=>updateUserData({ savingsGoals: (userData.savingsGoals||[]).map(g=>g.id===id? { ...g, ...changes }: g) })}
+                    onRemove={(id)=>updateUserData({ savingsGoals: (userData.savingsGoals||[]).filter(g=>g.id!==id) })}
+                  />
+                </div>
+              )}
+
+              {activeTab==='library' && (
+                <Library onTakeAction={handleTakeAction}/>
+              )}
+
+              {activeTab==='settings' && (
+                <div className="grid gap-4">
+                  <div className="glass rounded-xl p-4">
+                    <h3 className="font-semibold mb-2">Profile</h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block text-sm">Name
+                        <input className="mt-1 w-full bg-gray-800 rounded-lg px-3 py-2" value={userData.name} onChange={(e)=>updateUserData({ name:e.target.value })}/>
+                      </label>
+                      <label className="block text-sm">Monthly income
+                        <input type="number" step="0.01" className="mt-1 w-full bg-gray-800 rounded-lg px-3 py-2" value={userData.income} onChange={(e)=>updateUserData({ income: parseFloat(e.target.value||0) })}/>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="glass rounded-xl p-4">
+                    <h3 className="font-semibold mb-2">Danger zone</h3>
+                    <button onClick={()=>{ if(confirm('Clear all data?')){ localStorage.removeItem('fynix-ultimate-data'); location.reload(); } }} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">Reset App</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile nav */}
+          <nav className="mobile-nav safe-bottom">
+            {[
+              { key:'dashboard', label:'Dashboard' },
+              { key:'library', label:'Library' },
+              { key:'settings', label:'Settings' }
+            ].map(i => (
+              <button key={i.key} onClick={()=>setActiveTab(i.key)} className={`px-3 py-2 rounded-lg ${activeTab===i.key? 'tab-active':'bg-gray-800/70 text-gray-200'}`}>{i.label}</button>
+            ))}
+          </nav>
+        </>
+      );
+    };
+
+    // ==================== SELF-TESTS ====================
+    function runSelfTests(){
+      try {
+        const results = [
+          ['React present', !!window.React],
+          ['Chart.js present', !!window.Chart],
+          ['Canvas element', !!document.getElementById('bgCanvas')],
+          ['BG animation running', !!window.__fynix_bg_running],
+        ];
+        console.groupCollapsed('%cFynix self-tests','background:#111;color:#0f0;padding:2px 6px;border-radius:4px');
+        console.table(results.map(([name,pass])=>({ test: name, pass })));
+        console.groupEnd();
+      } catch(e) { console.warn('Self-test error', e); }
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App/>);
+    setTimeout(runSelfTests, 0);
+  </script>
+</body>
+</html>
