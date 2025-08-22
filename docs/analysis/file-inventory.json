@@ -1,0 +1,134 @@
+[
+  {
+    "path": "CLAUDE_FYNIX_LATEST.txt",
+    "size": 87181
+  },
+  {
+    "path": "Financial Planning for Difficult Situations.md",
+    "size": 67902
+  },
+  {
+    "path": "Financial Recovery and Credit Rebuilding.md",
+    "size": 92820
+  },
+  {
+    "path": "Fynix_transparent.png",
+    "size": 1021924
+  },
+  {
+    "path": "app/README.md",
+    "size": 2269
+  },
+  {
+    "path": "app/eslint.config.js",
+    "size": 610
+  },
+  {
+    "path": "app/index.html",
+    "size": 366
+  },
+  {
+    "path": "app/package.json",
+    "size": 674
+  },
+  {
+    "path": "app/public/vite.svg",
+    "size": 1497
+  },
+  {
+    "path": "app/src/App.css",
+    "size": 606
+  },
+  {
+    "path": "app/src/App.tsx",
+    "size": 903
+  },
+  {
+    "path": "app/src/assets/react.svg",
+    "size": 4126
+  },
+  {
+    "path": "app/src/index.css",
+    "size": 1154
+  },
+  {
+    "path": "app/src/main.tsx",
+    "size": 230
+  },
+  {
+    "path": "app/src/vite-env.d.ts",
+    "size": 38
+  },
+  {
+    "path": "app/tsconfig.app.json",
+    "size": 702
+  },
+  {
+    "path": "app/tsconfig.json",
+    "size": 119
+  },
+  {
+    "path": "app/tsconfig.node.json",
+    "size": 630
+  },
+  {
+    "path": "app/vite.config.ts",
+    "size": 161
+  },
+  {
+    "path": "chatgpt_phoenix-plan.txt",
+    "size": 35380
+  },
+  {
+    "path": "claude_phoenix-plan - REALLY LIKE THIS ONE_IT IS VERY COMPLETE.html",
+    "size": 94907
+  },
+  {
+    "path": "docs/Fynix.docx",
+    "size": 17840
+  },
+  {
+    "path": "docs/fynix_ci_workflow_verify_branding_script.md",
+    "size": 5776
+  },
+  {
+    "path": "docs/fynix_end_to_end_codex_brief_remastered.md",
+    "size": 10422
+  },
+  {
+    "path": "fynix_claude_unfinished.html",
+    "size": 97020
+  },
+  {
+    "path": "fynix_complete_app_html_react_via_cdn.html",
+    "size": 52764
+  },
+  {
+    "path": "gemini_fynix_latest - Copy.HTML",
+    "size": 56181
+  },
+  {
+    "path": "gemini_fynix_v2.html",
+    "size": 66408
+  },
+  {
+    "path": "gemini_phoenix-plan_latest.txt",
+    "size": 74039
+  },
+  {
+    "path": "phoenix_plan_daily_pay_app_vite_react_p_5_svg.jsx",
+    "size": 41704
+  },
+  {
+    "path": "phoenix_plan_daily_paydown_app_vite_react_p_5_svg.jsx",
+    "size": 32134
+  },
+  {
+    "path": "phoenix_ultimate.html",
+    "size": 40144
+  },
+  {
+    "path": "scripts/verify-branding.mjs",
+    "size": 2076
+  }
+]

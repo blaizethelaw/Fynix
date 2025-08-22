@@ -1,0 +1,13 @@
+{
+  "name": "fynix-root",
+  "private": true,
+  "workspaces": ["app"],
+  "scripts": {
+    "build": "npm run build --workspace app",
+    "lint": "npm run lint --workspace app",
+    "test": "npm test --workspace app"
+  },
+  "devDependencies": {
+    "playwright": "^1.45.0"
+  }
+}
