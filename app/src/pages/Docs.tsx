@@ -1,10 +1,17 @@
 import { Link, useParams, Navigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeSlug from 'rehype-slug'
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import { useMemo } from 'react'
+
+// Raw‑load both docs from the monorepo root docs/ folder
 import planning from '../../../docs/financial-planning-for-difficult-situations.mdx?raw'
 import recovery from '../../../docs/financial-recovery-and-credit-rebuilding.mdx?raw'
-import { useMemo, type ReactNode, type ElementType } from 'react'
 
-const docs = [
+type Doc = { slug: string; title: string; content: string }
+
+const docs: Doc[] = [
   {
     slug: 'financial-planning-for-difficult-situations',
     title: 'Financial Planning for Difficult Situations',
@@ -20,25 +27,28 @@ const docs = [
 const slugify = (str: string) =>
   str
     .toLowerCase()
+    .replace(/\*+/g, '')
+    .replace(/[`~]+/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // [text](url) → text
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // ![alt](url) → alt
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
-
-function Heading({ level, children }: { level: number; children?: ReactNode }) {
-  const Tag = (`h${level}` as ElementType)
-  const id = slugify(String(children))
-  return <Tag id={id}>{children}</Tag>
-}
 
 export default function Docs() {
   const { slug } = useParams()
   const current = docs.find((d) => d.slug === slug) ?? docs[0]
+
   const toc = useMemo(() => {
     const regex = /^(##|###)\s+(.*)$/gm
     const items: { id: string; text: string; level: number }[] = []
-    let match
+    let match: RegExpExecArray | null
     while ((match = regex.exec(current.content)) !== null) {
       const level = match[1] === '##' ? 2 : 3
-      const text = match[2].trim()
+      const raw = match[2].trim()
+      const text = raw
+        .replace(/^\*{1,3}(.*?)\*{1,3}$/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+        .replace(/`/g, '')
       items.push({ id: slugify(text), text, level })
     }
     return items
@@ -64,6 +74,7 @@ export default function Docs() {
           ))}
         </nav>
       </aside>
+
       <main className="flex-1 p-4">
         <nav className="mb-6">
           <h3 className="font-semibold mb-2">On this page</h3>
@@ -77,12 +88,17 @@ export default function Docs() {
             ))}
           </ul>
         </nav>
+
         <article className="prose dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md">
           <ReactMarkdown
-            components={{
-              h2: (props) => <Heading level={2} {...props} />,
-              h3: (props) => <Heading level={3} {...props} />
-            }}
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[
+              rehypeSlug,
+              [
+                rehypeAutolinkHeadings,
+                { behavior: 'wrap', properties: { className: ['no-underline'] } }
+              ]
+            ]}
           >
             {current.content}
           </ReactMarkdown>
@@ -91,4 +107,3 @@ export default function Docs() {
     </div>
   )
 }
-
