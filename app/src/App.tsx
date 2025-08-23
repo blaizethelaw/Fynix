@@ -22,6 +22,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/tools" element={<Tools />} />
         <Route path="/docs" element={<Docs />} />
+        <Route path="/docs/:slug" element={<Docs />} />
       </Routes>
     </BrowserRouter>
   )
