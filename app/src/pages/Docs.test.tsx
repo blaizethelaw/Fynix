@@ -8,25 +8,34 @@ import Docs from './Docs'
 expect.extend(matchers)
 
 describe('Docs', () => {
-  it('renders default docs page', () => {
+  it('redirects to first doc when slug is missing', async () => {
     render(
       <MemoryRouter initialEntries={['/docs']}>
         <Routes>
           <Route path="/docs" element={<Docs />} />
+          <Route path="/docs/:slug" element={<Docs />} />
         </Routes>
       </MemoryRouter>
     )
-    expect(screen.getByRole('heading', { name: /docs/i })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Financial Planning for Difficult Situations'
+      })
+    ).toBeInTheDocument()
   })
 
-  it('renders docs with slug', () => {
+  it('renders doc content for given slug', () => {
     render(
-      <MemoryRouter initialEntries={['/docs/some-guide']}>
+      <MemoryRouter initialEntries={['/docs/financial-recovery-and-credit-rebuilding']}>
         <Routes>
           <Route path="/docs/:slug" element={<Docs />} />
         </Routes>
       </MemoryRouter>
     )
-    expect(screen.getByRole('heading', { name: /docs: some-guide/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        name: 'Financial Recovery and Credit Rebuilding'
+      })
+    ).toBeInTheDocument()
   })
 })
