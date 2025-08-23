@@ -77,7 +77,7 @@ export default function Docs() {
             ))}
           </ul>
         </nav>
-        <article className="prose max-w-none">
+        <article className="prose dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md">
           <ReactMarkdown
             components={{
               h2: (props) => <Heading level={2} {...props} />,
