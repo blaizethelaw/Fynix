@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fynix - Rise From Financial Ashes</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <!-- React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        :root {
+            --phoenix-orange: #f97316;
+            --phoenix-red: #ea580c;
+            --phoenix-yellow: #f59e0b;
+            --phoenix-gold: #fbbf24;
+            --phoenix-dark: #0a0e27;
+            --glass-white: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #111827 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+        
+        /* Animations */
+        @keyframes phoenixRise {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.02); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .phoenix-glow {
+            animation: glow 3s ease-in-out infinite;
+        }
+        
+        .phoenix-rise {
+            animation: phoenixRise 3s ease-in-out infinite;
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* Glass Effect */
+        .glass {
+            background: var(--glass-white);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+            padding: 1rem;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1f2937, #111827);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+            animation: slideUp 0.3s ease;
+        }
+        
+        /* Mobile Navigation */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 0.5rem;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+            }
+            
+            .desktop-nav {
+                display: none !important;
+            }
+            
+            .main-content {
+                padding-bottom: 70px !important;
+            }
+        }
+        
+        /* Tab Active States */
+        .tab-active {
+            background: linear-gradient(135deg, var(--phoenix-orange), var(--phoenix-red));
+            color: white;
+        }
+        
+        /* Progress Bars */
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 8px;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--phoenix-orange), var(--phoenix-yellow));
+            height: 100%;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -75px;
+            width: 150px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Budget Health Colors */
+        .health-good { background: linear-gradient(135deg, #10b981, #059669); }
+        .health-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .health-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        
+        /* Responsive Grid */
+        .responsive-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .responsive-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .responsive-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* Touch-friendly buttons */
+        button, .btn {
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+        }
+        
+        /* Input styles for mobile */
+        input, select, textarea {
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+        
+        /* Card hover effects (disabled on mobile) */
+        @media (hover: hover) {
+            .hover-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(249, 115, 22, 0.1);
+            }
+        }
+        
+        /* Responsive text */
+        .text-responsive {
+            font-size: clamp(0.875rem, 2vw, 1rem);
+        }
+        
+        .heading-responsive {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+        }
+        
+        /* Safe area for notched devices */
+        .safe-top {
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        // ==================== ICONS ====================
+        const Icons = {
+            Phoenix: () => (
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center font-bold text-lg phoenix-rise">
+                    🔥
+                </div>
+            ),
+            Dashboard: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>,
+            Dollar: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5a4 4 0 0 0-4-2H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H7"/></svg>,
+            Calculator: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/></svg>,
+            Book: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Chart: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 17l6-6 4 4 7-7"/></svg>,
+            Target: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            Plus: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>,
+            Trash: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>,
+            Check: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>,
+            Sparkles: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2 4 4 2-4 2-2 4-2-4-4-2 4-2zM5 11l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/></svg>,
+            Download: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>,
+            Upload: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>,
+            Calendar: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 8h18M8 2v4M16 2v4"/></svg>,
+            Lightbulb: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/></svg>,
+            Brain: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
+            Flame: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
+            Wallet: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0"/></svg>,
+            Menu: () => <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>,
+            Close: () => <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>,
+            Wifi: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>,
+            Youtube: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>,
+            ExternalLink: () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>,
+        };
+        
+        // ==================== UTILITIES ====================
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount || 0);
+        };
+        
+        const uid = () => Math.random().toString(36).slice(2, 11);
+        
+        const daysInMonth = (date = new Date()) => {
+            return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        };
+        
+        const daysUntilDue = (dueDay, today = new Date()) => {
+            const currentDay = today.getDate();
+            const totalDays = daysInMonth(today);
+            
+            if (dueDay >= currentDay) {
+                return dueDay - currentDay;
+            } else {
+                return (totalDays - currentDay) + dueDay;
+            }
+        };
+        
+        // Guides data structure
+        const guidesData = [
+            {
+                id: 'part1',
+                title: 'Part I: Financial Triage',
+                sections: [
+                    { 
+                        id: 'sec1-1', 
+                        title: 'The Garnishment Gauntlet', 
+                        takeaway: 'Reframe garnishment as a fixed expense, not a loss.', 
+                        content: `Understanding wage garnishment is crucial for financial recovery. Federal law limits garnishment to 25% of disposable earnings for regular debts, but child support can take up to 60%. The key mindset shift: treat garnishment as your first "bill" and budget from what remains.
+
+Your rights include:
+- Notification before garnishment begins
+- Right to challenge the order in court
+- Ability to file for financial hardship exemption
+- Option to negotiate alternative payment plans
+
+Remember: This is temporary. Focus on what you can control.`,
+                        resources: [
+                            { type: 'link', title: 'FTC Guide to Wage Garnishment', url: 'https://consumer.ftc.gov/articles/wage-garnishment' },
+                            { type: 'youtube', title: 'Understanding Your Rights', url: 'https://www.youtube.com/watch?v=garnishment' }
+                        ],
+                        actionable: { type: 'add_saving', name: 'Legal Fund', goal: 500 }
+                    },
+                    { 
+                        id: 'sec1-2', 
+                        title: 'Zero-Based Budgeting', 
+                        takeaway: 'Every dollar gets a job before the month begins.', 
+                        content: `Zero-Based Budgeting means Income - Expenses = $0 (on purpose!).
+
+Steps:
+1. Start with your post-tax, post-garnishment income
+2. List and subtract the Four Walls (Food, Utilities, Shelter, Transport)
+3. Subtract all other fixed bills and minimum debt payments
+4. Allocate remaining to variable spending categories
+5. Assign final dollars to your primary goal (emergency fund)
+
+For irregular income: Use your LOWEST monthly income from the past 6 months as your baseline. Any extra is bonus for debt/savings.`,
+                        actionable: { type: 'add_saving', name: 'Budget Buffer', goal: 200 }
+                    },
+                    { 
+                        id: 'sec1-3', 
+                        title: 'Emergency Fund', 
+                        takeaway: 'Build $1,000 before paying off any debt.', 
+                        content: `Your starter emergency fund is your financial armor. Without it, every surprise expense becomes new debt.
+
+Fast-track strategies:
+- Sell everything you don't absolutely need
+- Take on extra shifts or gig work
+- Direct 100% of windfalls (tax refunds, bonuses) here
+- Set up automatic $25/week transfers
+- Cancel all non-essential subscriptions temporarily
+
+Timeline:
+- $25/week = 40 weeks to $1,000
+- $50/week = 20 weeks to $1,000
+- $100/week = 10 weeks to $1,000
+
+This fund is for TRUE emergencies only: job loss, medical bills, car repairs that prevent you from working.`,
+                        actionable: { type: 'add_saving', name: 'Emergency Fund', goal: 1000 }
+                    }
+                ]
+            },
+            {
+                id: 'part2',
+                title: 'Part II: Credit Comeback',
+                sections: [
+                    { 
+                        id: 'sec2-1', 
+                        title: 'Credit Score Factors', 
+                        takeaway: 'Payment history (35%) and utilization (30%) are 65% of your score.', 
+                        content: `FICO Score Breakdown:
+- Payment History (35%): NEVER miss a payment
+- Credit Utilization (30%): Keep under 10% for best results
+- Length of History (15%): Keep old accounts open
+- Credit Mix (10%): Have both cards and loans
+- New Credit (10%): Limit applications to 1-2 per year
+
+Quick wins:
+- Set up autopay for minimums on everything
+- Pay down cards to 9% utilization
+- Become authorized user on old, perfect account
+- Dispute ALL errors on reports`,
+                        resources: [
+                            { type: 'link', title: 'Annual Credit Report', url: 'https://www.annualcreditreport.com' }
+                        ]
+                    },
+                    { 
+                        id: 'sec2-2', 
+                        title: '12-Month Credit Plan', 
+                        takeaway: 'Systematic approach: Foundation → Building → Optimization', 
+                        content: `Months 1-3: Foundation
+- Pull all 3 credit reports
+- Dispute every error
+- Apply for credit-builder loan
+- Send goodwill letters for late payments
+
+Months 4-6: Building
+- Get secured credit card ($200-500 deposit)
+- Become authorized user on trusted account
+- Set up autopay for everything
+- Keep utilization under 10%
+
+Months 7-12: Optimization
+- Request credit limit increases (no hard pull)
+- Pay down to 1% before statement closes
+- NO new applications
+- Monitor scores weekly
+
+Expected results: 50-150 point increase in 12 months`,
+                        actionable: { type: 'add_saving', name: 'Secured Card Deposit', goal: 300 }
+                    }
+                ]
+            },
+            {
+                id: 'part3',
+                title: 'Part III: Wealth Building',
+                sections: [
+                    { 
+                        id: 'sec3-1', 
+                        title: 'Debt Strategies', 
+                        takeaway: 'Snowball for motivation, Avalanche for math, Snow-Lanche for both.', 
+                        content: `Debt Snowball (Psychological Win):
+- List debts smallest to largest
+- Pay minimums on all
+- Attack smallest with everything extra
+- Roll payment to next after payoff
+
+Debt Avalanche (Mathematical Win):
+- List debts by interest rate (highest first)
+- Pay minimums on all
+- Attack highest rate with everything extra
+- Saves most money on interest
+
+The Snow-Lanche Hybrid:
+1. Pay off 1-2 smallest debts for quick wins
+2. Switch to avalanche for remaining debts
+3. Best of both worlds!`,
+                        resources: [
+                            { type: 'youtube', title: 'Debt Free in 18 Months', url: 'https://www.youtube.com/watch?v=debt' }
+                        ]
+                    },
+                    { 
+                        id: 'sec3-2', 
+                        title: 'Investment Priorities', 
+                        takeaway: '401k match → Roth IRA → Max 401k → Taxable', 
+                        content: `Investment Order of Operations:
+
+1. 401(k) to employer match (100% instant return!)
+2. Roth IRA to max ($6,500/year)
+   - Secret: Withdraw contributions anytime tax-free
+   - Functions as backup emergency fund
+3. Max out 401(k) ($23,000/year)
+4. HSA if available ($3,850 single/$7,750 family)
+5. Taxable brokerage account
+
+Simple portfolio:
+- Age 20-40: 100% stocks (VTI or VT)
+- Age 40-60: Add 20-30% bonds (BND)
+- Age 60+: 40-50% bonds
+
+Compound interest example:
+$200/month for 30 years at 8% = $293,509
+Start NOW, time is your superpower!`,
+                        actionable: { type: 'add_saving', name: 'Roth IRA Fund', goal: 500 }
+                    }
+                ]
+            }
+        ];
+        
+        // ==================== BACKGROUND ANIMATION ====================
+        const BackgroundCanvas = () => {
+            React.useEffect(() => {
+                // Only run on devices with good performance
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    return;
+                }
+                
+                const sketch = (p) => {
+                    let particles = [];
+                    let canvas;
+                    
+                    p.setup = () => {
+                        canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                        canvas.position(0, 0);
+                        canvas.style('position', 'fixed');
+                        canvas.style('z-index', '0');
+                        canvas.id('bgCanvas');
+                        
+                        // Fewer particles on mobile for performance
+                        const particleCount = p.windowWidth < 768 ? 15 : 25;
+                        
+                        for (let i = 0; i < particleCount; i++) {
+                            particles.push({
+                                x: p.random(p.width),
+                                y: p.random(p.height),
+                                size: p.random(2, 4),
+                                speedX: p.random(-0.3, 0.3),
+                                speedY: p.random(-0.5, -1),
+                                opacity: p.random(30, 100)
+                            });
+                        }
+                    };
+                    
+                    p.draw = () => {
+                        p.clear();
+                        
+                        particles.forEach((particle) => {
+                            p.noStroke();
+                            p.fill(249, 115, 22, particle.opacity);
+                            p.ellipse(particle.x, particle.y, particle.size);
+                            
+                            particle.x += particle.speedX;
+                            particle.y += particle.speedY;
+                            particle.opacity -= 0.3;
+                            
+                            if (particle.y < -10 || particle.opacity <= 0) {
+                                particle.x = p.random(p.width);
+                                particle.y = p.height + 10;
+                                particle.opacity = p.random(30, 100);
+                            }
+                            
+                            if (particle.x < 0) particle.x = p.width;
+                            if (particle.x > p.width) particle.x = 0;
+                        });
+                    };
+                    
+                    p.windowResized = () => {
+                        p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    };
+                };
+                
+                new p5(sketch);
+            }, []);
+            
+            return null;
+        };
+        
+        // ==================== SETUP WIZARD ====================
+        const SetupWizard = ({ onComplete }) => {
+            const [step, setStep] = React.useState(1);
+            const [data, setData] = React.useState({
+                name: '',
+                income: '',
+                incomeType: 'salary',
+                goal: 'emergency'
+            });
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (step < 3) {
+                    setStep(step + 1);
+                } else {
+                    onComplete({
+                        ...data,
+                        income: parseFloat(data.income) || 3000,
+                        expenses: [],
+                        savingsGoals: [],
+                        transactions: [],
+                        settings: {
+                            cycleMode: 'actual',
+                            allocationMode: 'even',
+                            roundTo: 'cent'
+                        }
+                    });
+                }
+            };
+            
+            return (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="text-center mb-6">
+                            <div className="flex justify-center mb-4">
+                                <Icons.Phoenix />
+                            </div>
+                            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent">
+                                Welcome to Fynix
+                            </h2>
+                            <p className="text-gray-400 mt-2 text-sm md:text-base">Rise from financial ashes to freedom</p>
+                        </div>
+                        
+                        <div className="flex justify-between mb-6">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className={`flex-1 h-2 mx-1 rounded-full transition-all ${i <= step ? 'bg-orange-500' : 'bg-gray-700'}`} />
+                            ))}
+                        </div>
+                        
+                        <div onSubmit={handleSubmit}>
+                            {step === 1 && (
+                                <div className="space-y-4 fade-in">
+                                    <h3 className="text-xl font-semibold mb-4">Let's get to know you</h3>
+                                    <div>
+                                        <label className="block text-sm text-gray-400 mb-2">Your Name</label>
+                                        <input
+                                            type="text"
+                                            value={data.name}
+                                            onChange={(e) => setData({...data, name: e.target.value})}
+                                            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:border-orange-500 focus:outline-none"
+                                            placeholder="Enter your name"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {step === 2 && (
+                                <div className="space-y-4 fade-in">
+                                    <h3 className="text-xl font-semibold mb-4">Your Income Details</h3>
+                                    <div>
+                                        <label className="block text-sm text-gray-400 mb-2">Monthly Income (After Tax)</label>
+                                        <input
+                                            type="number"
+                                            value={data.income}
+                                            onChange={(e) => setData({...data, income: e.target.value})}
+                                            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:border-orange-500 focus:outline-none"
+                                            placeholder="What hits your bank account"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-400 mb-2">Income Type</label>
+                                        <select
+                                            value={data.incomeType}
+                                            onChange={(e) => setData({...data, incomeType: e.target.value})}
+                                            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:border-orange-500 focus:outline-none"
+                                        >
+                                            <option value="salary">Salaried (Fixed)</option>
+                                            <option value="hourly">Hourly (Variable)</option>
+                                            <option value="contract">Contract/Freelance</option>
+                                            <option value="multiple">Multiple Sources</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {step === 3 && (
+                                <div className="space-y-4 fade-in">
+                                    <h3 className="text-xl font-semibold mb-4">Your Primary Goal</h3>
+                                    <div className="space-y-3">
+                                        {[
+                                            { value: 'emergency', label: '🛡️ Build Emergency Fund', desc: '$1,000 safety net' },
+                                            { value: 'debt', label: '💳 Eliminate Debt', desc: 'Become debt-free' },
+                                            { value: 'credit', label: '📈 Rebuild Credit', desc: 'Reach 700+ score' },
+                                            { value: 'save', label: '💰 Save for Goal', desc: 'Specific purchase' },
+                                            { value: 'invest', label: '🚀 Start Investing', desc: 'Build wealth' }
+                                        ].map(option => (
+                                            <label key={option.value} className="block">
+                                                <input
+                                                    type="radio"
+                                                    name="goal"
+                                                    value={option.value}
+                                                    checked={data.goal === option.value}
+                                                    onChange={(e) => setData({...data, goal: e.target.value})}
+                                                    className="sr-only"
+                                                />
+                                                <div className={`p-3 md:p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                                    data.goal === option.value 
+                                                        ? 'border-orange-500 bg-orange-500/10' 
+                                                        : 'border-gray-700 hover:border-gray-600'
+                                                }`}>
+                                                    <div className="font-semibold text-sm md:text-base">{option.label}</div>
+                                                    <div className="text-xs md:text-sm text-gray-400">{option.desc}</div>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <button
+                                onClick={handleSubmit}
+                                className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all text-sm md:text-base"
+                            >
+                                {step < 3 ? 'Continue' : 'Start My Fynix Journey 🔥'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // ==================== DASHBOARD COMPONENTS ====================
+        const MyCards = ({ balance }) => (
+            <div className="glass p-4 md:p-6 rounded-xl shadow-lg hover-card">
+                <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">My Card</h3>
+                <div className="p-4 md:p-5 rounded-lg text-white relative overflow-hidden h-40 md:h-48 flex flex-col justify-between bg-gradient-to-br from-gray-900 to-black">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10">
+                        <Icons.Phoenix />
+                    </div>
+                    <div className="relative z-10">
+                        <p className="text-xs md:text-sm opacity-80">Balance</p>
+                        <p className="text-xl md:text-2xl font-bold">{formatCurrency(balance)}</p>
+                    </div>
+                    <div className="flex justify-between items-center relative z-10">
+                        <p className="font-mono text-sm md:text-lg tracking-wider">•••• •••• •••• 1234</p>
+                        <Icons.Wifi />
+                    </div>
+                </div>
+            </div>
+        );
+        
+        const BudgetHealth = ({ income, expenses, savings }) => {
+            const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+            const totalSavings = savings.reduce((sum, g) => sum + (g.saved || 0), 0);
+            const available = income - totalExpenses;
+            const ratio = income > 0 ? (totalExpenses / income) * 100 : 0;
+            
+            let status, statusClass, message;
+            if (ratio > 100) {
+                status = '⚠️ Over Budget';
+                statusClass = 'health-danger';
+                message = `Spending ${formatCurrency(Math.abs(available))} more than income`;
+            } else if (ratio > 90) {
+                status = '😰 Tight';
+                statusClass = 'health-warning';
+                message = 'Consider reducing expenses';
+            } else {
+                status = '✅ Healthy';
+                statusClass = 'health-good';
+                message = `${formatCurrency(available)} available`;
+            }
+            
+            return (
+                <div className="glass rounded-xl p-4 md:p-6 mb-4 md:mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <h3 className="text-base md:text-lg font-semibold">Budget Health</h3>
+                        <div className={`px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${statusClass} text-center`}>
+                            {status}
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        <div className="text-center">
+                            <div className="text-lg md:text-2xl font-bold text-green-400">{formatCurrency(income)}</div>
+                            <div className="text-xs text-gray-400">Income</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg md:text-2xl font-bold text-red-400">{formatCurrency(totalExpenses)}</div>
+                            <div className="text-xs text-gray-400">Expenses</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg md:text-2xl font-bold text-blue-400">{formatCurrency(totalSavings)}</div>
+                            <div className="text-xs text-gray-400">Saved</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg md:text-2xl font-bold text-yellow-400">{ratio.toFixed(0)}%</div>
+                            <div className="text-xs text-gray-400">Ratio</div>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
+                        <p className="text-xs md:text-sm text-gray-300">{message}</p>
+                    </div>
+                </div>
+            );
+        };
+        
+        const DailyBreakdown = ({ expenses, income, settings }) => {
+            const cycleDays = settings?.cycleMode === 'actual' ? daysInMonth() : 30;
+            const dailyIncome = income / cycleDays;
+            
+            const dailyExpenses = expenses.map(exp => ({
+                ...exp,
+                daily: exp.amount / cycleDays,
+                weekly: (exp.amount / cycleDays) * 7,
+                biweekly: (exp.amount / cycleDays) * 14,
+            }));
+            
+            const totalDaily = dailyExpenses.reduce((sum, e) => sum + e.daily, 0);
+            const dailyBuffer = dailyIncome - totalDaily;
+            
+            return (
+                <div className="glass rounded-xl p-4 md:p-6 hover-card">
+                    <h3 className="text-base md:text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Icons.Sparkles />
+                        <span className="hidden sm:inline">Daily Chip-Away Plan</span>
+                        <span className="sm:hidden">Daily Plan</span>
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="bg-gray-800/50 rounded-lg p-3">
+                            <div className="text-xs text-gray-400">Daily Income</div>
+                            <div className="text-lg md:text-xl font-bold text-green-400">{formatCurrency(dailyIncome)}</div>
+                        </div>
+                        <div className="bg-gray-800/50 rounded-lg p-3">
+                            <div className="text-xs text-gray-400">Daily Expenses</div>
+                            <div className="text-lg md:text-xl font-bold text-red-400">{formatCurrency(totalDaily)}</div>
+                        </div>
+                    </div>
+                    
+                    <div className={`p-3 rounded-lg mb-4 ${dailyBuffer >= 0 ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+                        <div className="text-xs text-gray-400">Daily Buffer</div>
+                        <div className={`text-lg md:text-xl font-bold ${dailyBuffer >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {formatCurrency(dailyBuffer)}
+                        </div>
+                    </div>
+                    
+                    {dailyExpenses.length > 0 && (
+                        <div className="space-y-2">
+                            <h4 className="font-semibold text-xs md:text-sm text-gray-400">Today's Transfers</h4>
+                            <div className="max-h-40 overflow-y-auto space-y-2">
+                                {dailyExpenses.slice(0, 3).map(exp => (
+                                    <div key={exp.id} className="bg-gray-800/50 rounded-lg p-2 flex justify-between items-center">
+                                        <div className="text-xs md:text-sm truncate pr-2">{exp.name}</div>
+                                        <div className="text-xs md:text-sm font-bold text-orange-400 whitespace-nowrap">
+                                            {formatCurrency(exp.daily)}/day
+                                        </div>
+                                    </div>
+                                ))}
+                                {dailyExpenses.length > 3 && (
+                                    <div className="text-xs text-gray-500 text-center">
+                                        +{dailyExpenses.length - 3} more
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        const ExpenseManager = ({ expenses, onAdd, onRemove }) => {
+            const [showForm, setShowForm] = React.useState(false);
+            const [newExpense, setNewExpense] = React.useState({
+                name: '',
+                amount: '',
+                category: 'Other',
+                dueDay: '1',
+                priority: 'medium'
+            });
+            
+            const categories = ['Housing', 'Utilities', 'Transport', 'Food', 'Debt', 'Insurance', 'Subscriptions', 'Other'];
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onAdd({
+                    id: uid(),
+                    ...newExpense,
+                    amount: parseFloat(newExpense.amount),
+                    dueDay: parseInt(newExpense.dueDay),
+                    monthlyAmount: parseFloat(newExpense.amount)
+                });
+                setNewExpense({ name: '', amount: '', category: 'Other', dueDay: '1', priority: 'medium' });
+                setShowForm(false);
+            };
+            
+            return (
+                <div className="glass rounded-xl p-4 md:p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-base md:text-lg font-semibold flex items-center gap-2">
+                            <Icons.Dollar />
+                            Expenses
+                        </h3>
+                        <button
+                            onClick={() => setShowForm(!showForm)}
+                            className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 rounded-lg flex items-center gap-1 transition-colors text-sm"
+                        >
+                            <Icons.Plus />
+                            <span className="hidden sm:inline">Add</span>
+                        </button>
+                    </div>
+                    
+                    {showForm && (
+                        <div className="mb-4 p-3 bg-gray-800/50 rounded-lg space-y-3 fade-in">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Expense name"
+                                    value={newExpense.name}
+                                    onChange={(e) => setNewExpense({...newExpense, name: e.target.value})}
+                                    className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                    required
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={newExpense.amount}
+                                    onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                                    className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                    step="0.01"
+                                    required
+                                />
+                                <select
+                                    value={newExpense.category}
+                                    onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                                    className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                >
+                                    {categories.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="number"
+                                    placeholder="Due day (1-31)"
+                                    value={newExpense.dueDay}
+                                    onChange={(e) => setNewExpense({...newExpense, dueDay: e.target.value})}
+                                    className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                    min="1"
+                                    max="31"
+                                />
+                            </div>
+                            <button
+                                onClick={handleSubmit}
+                                className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors text-sm"
+                            >
+                                Add Expense
+                            </button>
+                        </div>
+                    )}
+                    
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {expenses.map(expense => (
+                            <div key={expense.id} className="bg-gray-800/50 rounded-lg p-3 flex justify-between items-center group hover:bg-gray-800/70 transition-colors">
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-sm truncate">{expense.name}</div>
+                                    <div className="text-xs text-gray-400">
+                                        {expense.category} • Due: {expense.dueDay}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="text-right">
+                                        <div className="font-bold text-base md:text-lg">{formatCurrency(expense.amount || expense.monthlyAmount)}</div>
+                                        <div className="text-xs text-gray-400">{formatCurrency((expense.amount || expense.monthlyAmount) / 30)}/day</div>
+                                    </div>
+                                    <button
+                                        onClick={() => onRemove(expense.id)}
+                                        className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-300 transition-all"
+                                    >
+                                        <Icons.Trash />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    {expenses.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                            <Icons.Wallet />
+                            <p className="mt-2 text-sm">No expenses added yet</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        const SavingsGoals = ({ goals, onAdd, onUpdate, onRemove }) => {
+            const [showForm, setShowForm] = React.useState(false);
+            const [newGoal, setNewGoal] = React.useState({ name: '', goal: '' });
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onAdd({
+                    id: uid(),
+                    name: newGoal.name,
+                    goal: parseFloat(newGoal.goal),
+                    saved: 0,
+                    createdAt: new Date().toISOString()
+                });
+                setNewGoal({ name: '', goal: '' });
+                setShowForm(false);
+            };
+            
+            return (
+                <div className="glass rounded-xl p-4 md:p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-base md:text-lg font-semibold flex items-center gap-2">
+                            <Icons.Target />
+                            Savings
+                        </h3>
+                        <button
+                            onClick={() => setShowForm(!showForm)}
+                            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg flex items-center gap-1 transition-colors text-sm"
+                        >
+                            <Icons.Plus />
+                            <span className="hidden sm:inline">Add</span>
+                        </button>
+                    </div>
+                    
+                    {showForm && (
+                        <div className="mb-4 p-3 bg-gray-800/50 rounded-lg space-y-3 fade-in">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Goal name"
+                                    value={newGoal.name}
+                                    onChange={(e) => setNewGoal({...newGoal, name: e.target.value})}
+                                    className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                                    required
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Target amount"
+                                    value={newGoal.goal}
+                                    onChange={(e) => setNewGoal({...newGoal, goal: e.target.value})}
+                                    className="px-3 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                                    step="0.01"
+                                    required
+                                />
+                            </div>
+                            <button
+                                onClick={handleSubmit}
+                                className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors text-sm"
+                            >
+                                Create Goal
+                            </button>
+                        </div>
+                    )}
+                    
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {goals.map(goal => {
+                            const progress = goal.goal > 0 ? (goal.saved / goal.goal) * 100 : 0;
+                            
+                            return (
+                                <div key={goal.id} className="bg-gray-800/50 rounded-lg p-3">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h4 className="font-semibold text-sm">{goal.name}</h4>
+                                            <p className="text-xs text-gray-400">
+                                                {formatCurrency(goal.saved)} / {formatCurrency(goal.goal)}
+                                            </p>
+                                        </div>
+                                        <div className="text-lg font-bold text-green-400">
+                                            {progress.toFixed(0)}%
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="progress-bar mb-2">
+                                        <div className="progress-fill" style={{ width: `${Math.min(progress, 100)}%` }} />
+                                    </div>
+                                    
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                const amount = parseFloat(prompt('Add to savings:') || 0);
+                                                if (amount > 0) {
+                                                    onUpdate(goal.id, { saved: goal.saved + amount });
+                                                }
+                                            }}
+                                            className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs transition-colors"
+                                        >
+                                            Add Funds
+                                        </button>
+                                        <button
+                                            onClick={() => onRemove(goal.id)}
+                                            className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded text-xs transition-colors"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    
+                    {goals.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                            <Icons.Target />
+                            <p className="mt-2 text-sm">No savings goals yet</p>
+                            <p className="text-xs">Start with $1,000 emergency fund!</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        // ==================== CALCULATORS ====================
+        const Calculators = () => {
+            const [dailyCost, setDailyCost] = React.useState(null);
+            const [debtResult, setDebtResult] = React.useState(null);
+            const [compoundResult, setCompoundResult] = React.useState(null);
+            
+            const calculateDaily = (e) => {
+                const monthly = parseFloat(e.target.value);
+                if (!monthly || monthly <= 0) {
+                    setDailyCost(null);
+                    return;
+                }
+                setDailyCost({
+                    daily: monthly / 30,
+                    weekly: monthly / 4.33,
+                    hourly: monthly / 30 / 24,
+                    yearly: monthly * 12
+                });
+            };
+            
+            const calculateDebt = (e) => {
+                e.preventDefault();
+                const amount = parseFloat(e.target.elements.amount.value);
+                const rate = parseFloat(e.target.elements.rate.value) / 100 / 12;
+                const payment = parseFloat(e.target.elements.payment.value);
+                
+                if (!amount || !rate || !payment || payment <= amount * rate) {
+                    setDebtResult(null);
+                    return;
+                }
+                
+                const months = Math.ceil(Math.log(payment / (payment - amount * rate)) / Math.log(1 + rate));
+                const totalPaid = payment * months;
+                const totalInterest = totalPaid - amount;
+                
+                setDebtResult({ months, totalInterest, totalPaid });
+            };
+            
+            const calculateCompound = (e) => {
+                e.preventDefault();
+                const initial = parseFloat(e.target.elements.initial.value) || 0;
+                const monthly = parseFloat(e.target.elements.monthly.value) || 0;
+                const rate = parseFloat(e.target.elements.rate.value) / 100;
+                const years = parseFloat(e.target.elements.years.value);
+                
+                if (!years) {
+                    setCompoundResult(null);
+                    return;
+                }
+                
+                const months = years * 12;
+                const monthlyRate = rate / 12;
+                let futureValue = initial * Math.pow(1 + monthlyRate, months);
+                
+                if (monthly > 0) {
+                    futureValue += monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+                }
+                
+                const totalContributed = initial + (monthly * months);
+                const earnings = futureValue - totalContributed;
+                
+                setCompoundResult({ futureValue, totalContributed, earnings });
+            };
+            
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="glass rounded-xl p-4 md:p-6">
+                        <h3 className="text-base md:text-lg font-semibold mb-3 flex items-center gap-2">
+                            <Icons.Calculator />
+                            Daily Cost
+                        </h3>
+                        <p className="text-xs md:text-sm text-gray-400 mb-3">
+                            Break down monthly expenses
+                        </p>
+                        <input
+                            type="number"
+                            placeholder="Enter monthly amount"
+                            onChange={calculateDaily}
+                            className="w-full px-3 py-2 bg-gray-800 rounded-lg mb-3 text-sm"
+                        />
+                        {dailyCost && (
+                            <div className="space-y-2">
+                                <div className="bg-gray-800/50 rounded-lg p-3">
+                                    <div className="text-xs text-gray-400">Daily</div>
+                                    <div className="text-xl font-bold text-orange-400">{formatCurrency(dailyCost.daily)}</div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="bg-gray-800/50 rounded-lg p-2">
+                                        <div className="text-xs text-gray-400">Weekly</div>
+                                        <div className="font-bold text-sm">{formatCurrency(dailyCost.weekly)}</div>
+                                    </div>
+                                    <div className="bg-gray-800/50 rounded-lg p-2">
+                                        <div className="text-xs text-gray-400">Yearly</div>
+                                        <div className="font-bold text-sm">{formatCurrency(dailyCost.yearly)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="glass rounded-xl p-4 md:p-6">
+                        <h3 className="text-base md:text-lg font-semibold mb-3 flex items-center gap-2">
+                            <Icons.Target />
+                            Debt Payoff
+                        </h3>
+                        <div className="space-y-2">
+                            <input
+                                name="amount"
+                                type="number"
+                                placeholder="Total debt"
+                                className="w-full px-3 py-2 bg-gray-800 rounded-lg text-sm"
+                                required
+                            />
+                            <input
+                                name="rate"
+                                type="number"
+                                placeholder="Interest rate (%)"
+                                className="w-full px-3 py-2 bg-gray-800 rounded-lg text-sm"
+                                step="0.1"
+                                required
+                            />
+                            <input
+                                name="payment"
+                                type="number"
+                                placeholder="Monthly payment"
+                                className="w-full px-3 py-2 bg-gray-800 rounded-lg text-sm"
+                                required
+                            />
+                            <button onClick={calculateDebt} className="w-full px-3 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors text-sm">
+                                Calculate
+                            </button>
+                        </div>
+                        {debtResult && (
+                            <div className="mt-3 p-3 bg-gray-800/50 rounded-lg">
+                                <div className="text-center">
+                                    <div className="text-xl font-bold text-green-400">{debtResult.months} months</div>
+                                    <div className="text-xs text-gray-400">to debt freedom</div>
+                                    <div className="text-xs mt-1">Interest: {formatCurrency(debtResult.totalInterest)}</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="glass rounded-xl p-4 md:p-6">
+                        <h3 className="text-base md:text-lg font-semibold mb-3 flex items-center gap-2">
+                            <Icons.Chart />
+                            Compound Interest
+                        </h3>
+                        <div className="space-y-2">
+                            <input
+                                name="initial"
+                                type="number"
+                                placeholder="Initial amount"
+                                className="w-full px-3 py-2 bg-gray-800 rounded-lg text-sm"
+                            />
+                            <input
+                                name="monthly"
+                                type="number"
+                                placeholder="Monthly contribution"
+                                className="w-full px-3 py-2 bg-gray-800 rounded-lg text-sm"
+                            />
+                            <input
+                                name="rate"
+                                type="number"
+                                placeholder="Annual return (%)"
+                                defaultValue="8"
+                                className="w-full px-3 py-2 bg-gray-800 rounded-lg text-sm"
+                                step="0.1"
+                            />
+                            <input
+                                name="years"
+                                type="number"
+                                placeholder="Years"
+                                defaultValue="10"
+                                className="w-full px-3 py-2 bg-gray-800 rounded-lg text-sm"
+                            />
+                            <button onClick={calculateCompound} className="w-full px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors text-sm">
+                                Calculate
+                            </button>
+                        </div>
+                        {compoundResult && (
+                            <div className="mt-3 p-3 bg-gray-800/50 rounded-lg">
+                                <div className="text-center">
+                                    <div className="text-xl font-bold text-green-400">{formatCurrency(compoundResult.futureValue)}</div>
+                                    <div className="text-xs text-gray-400">future value</div>
+                                    <div className="text-xs mt-1">Earnings: {formatCurrency(compoundResult.earnings)}</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+        
+        // ==================== GUIDES LIBRARY ====================
+        const GuidesLibrary = ({ onTakeAction }) => {
+            const [activeSection, setActiveSection] = React.useState(null);
+            const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+            
+            React.useEffect(() => {
+                const handleResize = () => setIsMobile(window.innerWidth < 768);
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+            
+            return (
+                <div className="space-y-4">
+                    {isMobile ? (
+                        // Mobile: Accordion style
+                        <div className="space-y-3">
+                            {guidesData.map(guide => (
+                                <div key={guide.id} className="glass rounded-xl p-4">
+                                    <h3 className="font-bold text-orange-400 mb-2">{guide.title}</h3>
+                                    <div className="space-y-2">
+                                        {guide.sections.map(section => (
+                                            <button
+                                                key={section.id}
+                                                onClick={() => setActiveSection(activeSection?.id === section.id ? null : section)}
+                                                className={`w-full text-left p-3 rounded-lg transition-colors ${
+                                                    activeSection?.id === section.id
+                                                        ? 'bg-orange-600 text-white'
+                                                        : 'bg-gray-800/50 hover:bg-gray-700'
+                                                }`}
+                                            >
+                                                <div className="font-semibold text-sm">{section.title}</div>
+                                                {activeSection?.id === section.id && (
+                                                    <div className="mt-3 text-sm space-y-3">
+                                                        <div className="bg-gray-900/50 border border-orange-500/30 p-3 rounded-lg">
+                                                            <div className="flex items-start gap-2">
+                                                                <Icons.Lightbulb />
+                                                                <div>
+                                                                    <h4 className="font-bold text-orange-400 text-xs">Key Takeaway</h4>
+                                                                    <p className="text-gray-300 text-xs">{section.takeaway}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-gray-300 text-xs leading-relaxed">
+                                                            {section.content.split('\n\n').map((paragraph, i) => (
+                                                                <p key={i} className="mb-2">{paragraph}</p>
+                                                            ))}
+                                                        </div>
+                                                        {section.actionable && (
+                                                            <button
+                                                                onClick={() => onTakeAction(section.actionable)}
+                                                                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs"
+                                                            >
+                                                                Take Action: Add "{section.actionable.name}"
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        // Desktop: Sidebar layout
+                        <div className="grid grid-cols-4 gap-6">
+                            <aside className="col-span-1 glass p-4 rounded-xl">
+                                <h2 className="text-lg font-semibold mb-4">Library</h2>
+                                <nav className="space-y-4">
+                                    {guidesData.map(guide => (
+                                        <div key={guide.id}>
+                                            <h3 className="font-bold text-orange-400 text-sm">{guide.title}</h3>
+                                            <ul className="mt-1 space-y-1 pl-2">
+                                                {guide.sections.map(section => (
+                                                    <li key={section.id}>
+                                                        <button
+                                                            onClick={() => setActiveSection(section)}
+                                                            className={`w-full text-left text-xs p-2 rounded-md transition-colors ${
+                                                                activeSection?.id === section.id
+                                                                    ? 'bg-orange-600 text-white'
+                                                                    : 'hover:bg-gray-700'
+                                                            }`}
+                                                        >
+                                                            {section.title}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </nav>
+                            </aside>
+                            
+                            <div className="col-span-3 glass p-6 rounded-xl min-h-[60vh]">
+                                {activeSection ? (
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500 mb-4">
+                                            {activeSection.title}
+                                        </h2>
+                                        <div className="bg-gray-900/50 border border-orange-500/30 p-4 rounded-lg mb-6 flex items-start space-x-4">
+                                            <Icons.Lightbulb />
+                                            <div>
+                                                <h4 className="font-bold text-orange-400">Key Takeaway</h4>
+                                                <p className="text-gray-300">{activeSection.takeaway}</p>
+                                            </div>
+                                        </div>
+                                        <div className="prose prose-invert max-w-none text-gray-300 space-y-4">
+                                            {activeSection.content.split('\n\n').map((paragraph, i) => (
+                                                <p key={i}>{paragraph}</p>
+                                            ))}
+                                        </div>
+                                        {activeSection.resources && (
+                                            <div className="mt-8 border-t border-gray-700 pt-6">
+                                                <h3 className="text-lg font-semibold mb-4 text-orange-400">Further Learning</h3>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    {activeSection.resources.map(res => (
+                                                        <a
+                                                            href={res.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            key={res.url}
+                                                            className="bg-gray-700/50 p-4 rounded-lg flex items-center space-x-4 hover:bg-gray-700 transition-colors"
+                                                        >
+                                                            {res.type === 'youtube' ? <Icons.Youtube /> : <Icons.ExternalLink />}
+                                                            <div>
+                                                                <p className="font-semibold text-sm">{res.title}</p>
+                                                                <p className="text-xs text-gray-400">
+                                                                    {res.type === 'youtube' ? 'Watch on YouTube' : 'Read Article'}
+                                                                </p>
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {activeSection.actionable && (
+                                            <div className="mt-8 border-t border-gray-700 pt-6">
+                                                <button
+                                                    onClick={() => onTakeAction(activeSection.actionable)}
+                                                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                                                >
+                                                    Take Action: Add "{activeSection.actionable.name}" to Dashboard
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                                        <Icons.Book />
+                                        <h2 className="text-xl font-semibold mt-4">Welcome to the Fynix Library</h2>
+                                        <p className="mt-2 text-sm max-w-md">
+                                            Select a topic from the sidebar to learn key strategies for financial recovery.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        // ==================== JOURNEY COMPONENT ====================
+        const Journey = ({ userData }) => {
+            const milestones = [
+                {
+                    id: 'setup',
+                    title: 'Set up income and budget',
+                    complete: userData.income > 0
+                },
+                {
+                    id: 'emergency',
+                    title: 'Create emergency fund goal',
+                    complete: userData.savingsGoals.some(g => g.name.toLowerCase().includes('emergency'))
+                },
+                {
+                    id: 'expenses',
+                    title: 'Track all monthly expenses',
+                    complete: userData.expenses.length >= 3
+                },
+                {
+                    id: 'savings',
+                    title: 'Save first $100',
+                    complete: userData.savingsGoals.reduce((sum, g) => sum + g.saved, 0) >= 100
+                },
+                {
+                    id: 'buffer',
+                    title: 'Achieve positive cash flow',
+                    complete: userData.income > userData.expenses.reduce((sum, e) => sum + (e.amount || e.monthlyAmount || 0), 0)
+                },
+                {
+                    id: 'goals',
+                    title: 'Set 3 savings goals',
+                    complete: userData.savingsGoals.length >= 3
+                }
+            ];
+            
+            const completedCount = milestones.filter(m => m.complete).length;
+            const progress = (completedCount / milestones.length) * 100;
+            
+            return (
+                <div className="glass rounded-xl p-4 md:p-6">
+                    <h3 className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
+                        <Icons.Flame />
+                        Your Fynix Journey
+                    </h3>
+                    
+                    <div className="mb-6">
+                        <div className="flex justify-between text-sm mb-2">
+                            <span>Progress</span>
+                            <span>{completedCount} / {milestones.length} Complete</span>
+                        </div>
+                        <div className="progress-bar h-3">
+                            <div className="progress-fill" style={{ width: `${progress}%` }} />
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {milestones.map(milestone => (
+                            <div
+                                key={milestone.id}
+                                className={`p-3 rounded-lg flex items-center gap-3 transition-all ${
+                                    milestone.complete
+                                        ? 'bg-green-500/10 border border-green-500/30'
+                                        : 'bg-gray-800/50'
+                                }`}
+                            >
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    milestone.complete
+                                        ? 'bg-green-500'
+                                        : 'border-2 border-gray-600'
+                                }`}>
+                                    {milestone.complete && <Icons.Check />}
+                                </div>
+                                <span className={`text-sm ${milestone.complete ? 'line-through text-gray-500' : ''}`}>
+                                    {milestone.title}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    {progress === 100 && (
+                        <div className="mt-6 p-4 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 rounded-lg text-center">
+                            <p className="text-lg font-semibold">🎉 Congratulations!</p>
+                            <p className="text-sm text-gray-300 mt-1">You've completed the Fynix Foundation!</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        // ==================== MAIN APP ====================
+        const App = () => {
+            const [userData, setUserData] = React.useState(null);
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+            
+            React.useEffect(() => {
+                const saved = JSON.parse(localStorage.getItem('fynix-ultimate-data') || 'null');
+                if (saved) {
+                    setUserData(saved);
+                }
+            }, []);
+            
+            const handleSetupComplete = (data) => {
+                setUserData(data);
+                localStorage.setItem('fynix-ultimate-data', JSON.stringify(data));
+            };
+            
+            const updateUserData = (updates) => {
+                const newData = { ...userData, ...updates };
+                setUserData(newData);
+                localStorage.setItem('fynix-ultimate-data', JSON.stringify(newData));
+            };
+            
+            const handleTakeAction = (action) => {
+                if (action.type === 'add_saving') {
+                    const newGoal = {
+                        id: uid(),
+                        name: action.name,
+                        goal: action.goal,
+                        saved: 0,
+                        createdAt: new Date().toISOString()
+                    };
+                    updateUserData({
+                        savingsGoals: [...(userData.savingsGoals || []), newGoal]
+                    });
+                    setActiveTab('dashboard');
+                }
+            };
+            
+            const exportData = () => {
+                const dataStr = JSON.stringify(userData, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const exportFileDefaultName = `fynix-${new Date().toISOString().slice(0, 10)}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            };
+            
+            const importData = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            setUserData(data);
+                            localStorage.setItem('fynix-ultimate-data', JSON.stringify(data));
+                            alert('Data imported successfully!');
+                        } catch (error) {
+                            alert('Invalid file format');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            
+            if (!userData) {
+                return <SetupWizard onComplete={handleSetupComplete} />;
+            }
+            
+            const totalSavings = userData.savingsGoals.reduce((sum, g) => sum + (g.saved || 0), 0);
+            
+            const tabs = [
+                { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
+                { id: 'calculators', label: 'Calculators', icon: Icons.Calculator },
+                { id: 'guides', label: 'Guides', icon: Icons.Book },
+                { id: 'journey', label: 'Journey', icon: Icons.Flame }
+            ];
+            
+            return (
+                <>
+                    <BackgroundCanvas />
+                    
+                    <div className="relative z-10 min-h-screen main-content">
+                        <div className="max-w-7xl mx-auto px-4 py-4 md:px-6 md:py-6 safe-top">
+                            {/* Header */}
+                            <header className="glass rounded-xl p-4 mb-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icons.Phoenix />
+                                        <div>
+                                            <h1 className="heading-responsive font-bold bg-gradient-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent">
+                                                Fynix
+                                            </h1>
+                                            <p className="text-gray-400 text-xs md:text-sm">Welcome, {userData.name}! 🔥</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={exportData}
+                                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors hidden sm:block"
+                                            title="Export data"
+                                        >
+                                            <Icons.Download />
+                                        </button>
+                                        <label className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors cursor-pointer hidden sm:block" title="Import data">
+                                            <Icons.Upload />
+                                            <input type="file" accept=".json" onChange={importData} className="hidden" />
+                                        </label>
+                                        <button
+                                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors md:hidden"
+                                        >
+                                            {mobileMenuOpen ? <Icons.Close /> : <Icons.Menu />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </header>
+                            
+                            {/* Navigation */}
+                            <nav className={`glass rounded-xl p-4 mb-4 md:mb-6 desktop-nav ${mobileMenuOpen ? 'block' : 'hidden md:block'}`}>
+                                <div className="flex flex-col md:flex-row gap-2">
+                                    {tabs.map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => {
+                                                setActiveTab(tab.id);
+                                                setMobileMenuOpen(false);
+                                            }}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${
+                                                activeTab === tab.id
+                                                    ? 'tab-active'
+                                                    : 'hover:bg-gray-700'
+                                            }`}
+                                        >
+                                            <tab.icon />
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </nav>
+                            
+                            {/* Main Content */}
+                            <main>
+                                {activeTab === 'dashboard' && (
+                                    <div className="space-y-4 md:space-y-6">
+                                        <BudgetHealth 
+                                            income={userData.income} 
+                                            expenses={userData.expenses} 
+                                            savings={userData.savingsGoals} 
+                                        />
+                                        
+                                        <div className="responsive-grid">
+                                            <MyCards balance={totalSavings} />
+                                            <DailyBreakdown 
+                                                expenses={userData.expenses} 
+                                                income={userData.income} 
+                                                settings={userData.settings} 
+                                            />
+                                        </div>
+                                        
+                                        <div className="responsive-grid">
+                                            <ExpenseManager
+                                                expenses={userData.expenses}
+                                                onAdd={(expense) => updateUserData({
+                                                    expenses: [...userData.expenses, expense]
+                                                })}
+                                                onRemove={(id) => updateUserData({
+                                                    expenses: userData.expenses.filter(e => e.id !== id)
+                                                })}
+                                            />
+                                            <SavingsGoals
+                                                goals={userData.savingsGoals}
+                                                onAdd={(goal) => updateUserData({
+                                                    savingsGoals: [...userData.savingsGoals, goal]
+                                                })}
+                                                onUpdate={(id, updates) => updateUserData({
+                                                    savingsGoals: userData.savingsGoals.map(g => 
+                                                        g.id === id ? { ...g, ...updates } : g
+                                                    )
+                                                })}
+                                                onRemove={(id) => updateUserData({
+                                                    savingsGoals: userData.savingsGoals.filter(g => g.id !== id)
+                                                })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {activeTab === 'calculators' && <Calculators />}
+                                
+                                {activeTab === 'guides' && (
+                                    <GuidesLibrary onTakeAction={handleTakeAction} />
+                                )}
+                                
+                                {activeTab === 'journey' && <Journey userData={userData} />}
+                            </main>
+                        </div>
+                        
+                        {/* Mobile Navigation */}
+                        <nav className="mobile-nav">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                                        activeTab === tab.id
+                                            ? 'text-orange-400'
+                                            : 'text-gray-400'
+                                    }`}
+                                >
+                                    <tab.icon />
+                                    <span className="text-xs">{tab.label}</span>
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+                </>
+            );
+        };
+        
+        // ==================== RENDER ====================
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
