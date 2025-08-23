@@ -2,7 +2,7 @@ import { Link, useParams, Navigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import planning from '../../../docs/financial-planning-for-difficult-situations.mdx?raw'
 import recovery from '../../../docs/financial-recovery-and-credit-rebuilding.mdx?raw'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode, type ElementType } from 'react'
 
 const docs = [
   {
@@ -23,8 +23,8 @@ const slugify = (str: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 
-function Heading({ level, children }: { level: number; children: React.ReactNode }) {
-  const Tag = (`h${level}` as keyof JSX.IntrinsicElements)
+function Heading({ level, children }: { level: number; children?: ReactNode }) {
+  const Tag = (`h${level}` as ElementType)
   const id = slugify(String(children))
   return <Tag id={id}>{children}</Tag>
 }
