@@ -8,6 +8,12 @@ import Docs from '@/pages/Docs'
 import Tools from '@/pages/Tools'
 import Onboarding from '@/pages/Onboarding'
 import Phoenix from '@/pages/Phoenix'
+import About from '@/pages/About'
+import Contact from '@/pages/Contact'
+import Pricing from '@/pages/Pricing'
+import Blog from '@/pages/Blog'
+import BlogPost from '@/pages/BlogPost'
+import Billing from '@/pages/Billing'
 import { Flame } from 'lucide-react'
 
 export default function App() {
@@ -25,6 +31,11 @@ export default function App() {
             <Link className="btn-muted" to="/tools">Tools</Link>
             <Link className="btn-muted" to="/onboarding">Onboarding</Link>
             <Link className="btn-muted" to="/phoenix">Phoenix</Link>
+            <Link className="btn-muted" to="/pricing">Pricing</Link>
+            <Link className="btn-muted" to="/blog">Blog</Link>
+            <Link className="btn-muted" to="/about">About</Link>
+            <Link className="btn-muted" to="/contact">Contact</Link>
+            <Link className="btn-muted" to="/billing">Billing</Link>
             <Link className="btn-muted" to="/login">Login</Link>
             <Link className="btn-muted" to="/profile">Profile</Link>
           </nav>
@@ -39,6 +50,12 @@ export default function App() {
         <Route path="/tools" element={<Tools />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/phoenix" element={<Phoenix />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/billing" element={<Billing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<Protected><Profile /></Protected>} />
       </Routes>

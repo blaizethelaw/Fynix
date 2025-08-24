@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://your-domain.com/</loc></url>
+  <url><loc>https://your-domain.com/pricing</loc></url>
+  <url><loc>https://your-domain.com/blog</loc></url>
+  <url><loc>https://your-domain.com/about</loc></url>
+  <url><loc>https://your-domain.com/contact</loc></url>
+  <url><loc>https://your-domain.com/billing</loc></url>
+  <url><loc>https://your-domain.com/docs</loc></url>
+  <url><loc>https://your-domain.com/docs/financial-planning-for-difficult-situations</loc></url>
+  <url><loc>https://your-domain.com/docs/financial-recovery-and-credit-rebuilding</loc></url>
+  <!-- Blog articles listed statically below -->
+  <url><loc>https://your-domain.com/blog/phoenix-method</loc></url>
+  <url><loc>https://your-domain.com/blog/budget-to-surplus</loc></url>
+</urlset>
