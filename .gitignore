@@ -1,20 +1,8 @@
 node_modules
-app/node_modules
-app/dist
-npm-debug.log*
-
-# Prevent duplicates of root config files inside /code
-/code/.gitignore
-/code/README.md
-/code/package.json
-/code/package-lock.json
-/code/vercel.json
-/code/playwright.config.ts
-
-# Ignore config/meta files inside /code (only allow source files)
-/code/*.json
-/code/*.lock
-/code/*.md
-/code/*.ts
-/code/*.gitignore
-/code/vercel.json
+*.log
+web/dist
+web/tsconfig.tsbuildinfo
+web/package-lock.json
+web/public/og.png
+.vscode
+.DS_Store
