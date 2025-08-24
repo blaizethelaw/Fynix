@@ -5,6 +5,8 @@ import { Field, Input } from '@/components/ui/Field'
 import { Progress } from '@/components/ui/Progress'
 import { useLocalStorage } from '@/lib/useLocalStorage'
 import { fmt, pct } from '@/lib/format'
+import { useAuth } from '@/lib/auth'
+import { saveBudget, startCheckout } from '@/lib/api'
 import type { Income, Expense, DebtInput, InvestInput } from '@/types/budget'
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
 import { Flame } from 'lucide-react'
@@ -16,6 +18,7 @@ export default function Phoenix(){
   const [expenses, setExpenses] = useLocalStorage<Expense[]>('phoenix.expenses', [ { id: crypto.randomUUID(), category: 'Rent', amount: 1200 }, { id: crypto.randomUUID(), category: 'Groceries', amount: 450 } ])
   const [debt, setDebt] = useLocalStorage<DebtInput>('phoenix.debt', { balance: 8500, apr: 22, payment: 300 })
   const [invest, setInvest] = useLocalStorage<InvestInput>('phoenix.invest', { principal: 1000, monthly: 200, rate: 7, years: 10 })
+  const { user } = useAuth()
 
   const totalIncome = useMemo(() => incomes.reduce((s, i) => s + (Number(i.amount) || 0), 0), [incomes])
   const totalExpenses = useMemo(() => expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0), [expenses])
@@ -67,6 +70,8 @@ export default function Phoenix(){
         <div className="mt-4 flex justify-center gap-2">
           <ButtonMuted onClick={resetAll}>Reset</ButtonMuted>
           <ButtonMuted onClick={() => navigator.clipboard.writeText(JSON.stringify({ incomes, expenses, debt, invest }, null, 2))}>Copy data</ButtonMuted>
+          {user && <Button onClick={() => saveBudget(user.id, { incomes, expenses, debt, invest })}>Save to cloud</Button>}
+          <Button onClick={() => startCheckout(user?.email || undefined)}>Go Pro</Button>
         </div>
       </section>
 
