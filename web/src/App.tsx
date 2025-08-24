@@ -1,6 +1,9 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import Home from '@/pages/Home'
 import Dashboard from '@/pages/Dashboard'
+import Login from '@/pages/Login'
+import Profile from '@/pages/Profile'
+import Protected from '@/components/Protected'
 import Docs from '@/pages/Docs'
 import Tools from '@/pages/Tools'
 import Onboarding from '@/pages/Onboarding'
@@ -22,6 +25,8 @@ export default function App() {
             <Link className="btn-muted" to="/tools">Tools</Link>
             <Link className="btn-muted" to="/onboarding">Onboarding</Link>
             <Link className="btn-muted" to="/phoenix">Phoenix</Link>
+            <Link className="btn-muted" to="/login">Login</Link>
+            <Link className="btn-muted" to="/profile">Profile</Link>
           </nav>
         </div>
       </header>
@@ -34,6 +39,8 @@ export default function App() {
         <Route path="/tools" element={<Tools />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/phoenix" element={<Phoenix />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Protected><Profile /></Protected>} />
       </Routes>
     </div>
   )
