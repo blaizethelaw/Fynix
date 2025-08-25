@@ -64,7 +64,7 @@ export default function Phoenix(){
     <main className="container-padded py-8 space-y-8">
       <section className="text-center">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-amber-200 to-brand-500 bg-clip-text text-transparent inline-flex items-center gap-2">
-          <Flame className="h-8 w-8 text-amber-300"/> Phoenix Daily
+          <Flame className="h-8 w-8 text-amber-300"/> Fynix Daily
         </h1>
         <p className="text-slate-300 mt-2">Your command center for income, budget, debt payoff, and growth.</p>
         <div className="mt-4 flex justify-center gap-2">

@@ -12,7 +12,7 @@ export default function Pricing(){
         <div className="card p-6">
           <div className="text-lg font-semibold">Free</div>
           <ul className="text-slate-300 list-disc list-inside mt-2">
-            <li>Phoenix tools (local)</li>
+            <li>Fynix Daily tools (local)</li>
             <li>Core guides</li>
             <li>Installable PWA</li>
           </ul>

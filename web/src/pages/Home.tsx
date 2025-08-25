@@ -14,7 +14,7 @@ export default function Home(){
           </motion.h1>
           <p className="mt-3 text-slate-300 max-w-2xl mx-auto">Practical calculators and step‑by‑step guides that help you stabilize, recover, and build wealth — without the fluff.</p>
           <div className="mt-7 flex items-center justify-center gap-3">
-            <button className="btn" onClick={() => navigate('/phoenix')}>Open Phoenix</button>
+            <button className="btn" onClick={() => navigate('/fynix-daily')}>Open Fynix Daily</button>
             <Link className="btn-muted" to="/docs">Browse Guides</Link>
           </div>
         </section>
