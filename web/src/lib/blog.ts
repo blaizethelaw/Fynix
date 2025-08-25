@@ -8,11 +8,6 @@ export type Post = {
   content: string
 }
 
-/**
- * Loads markdown/MDX files as raw strings and parses front-matter.
- * Works entirely in the browser (no Node Buffer/vfile).
- * If the blog folder doesn’t exist yet, returns [].
- */
 export function getAllPosts(): Post[] {
   const files = import.meta.glob('../content/blog/**/*.{md,mdx}', {
     eager: true,
@@ -27,11 +22,12 @@ export function getAllPosts(): Post[] {
     const { data, content } = matter(raw)
     rows.push({
       slug,
-      title: (data?.title as string) || slug,
-      date: data?.date as string | undefined,
-      excerpt: data?.excerpt as string | undefined,
+      title: String((data as any)?.title ?? slug),
+      date: (data as any)?.date ? String((data as any).date) : undefined,
+      excerpt: (data as any)?.excerpt ? String((data as any).excerpt) : undefined,
       content
     })
   }
   return rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 }
+
