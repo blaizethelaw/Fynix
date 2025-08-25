@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 const resources = [
   {
-    title: 'The Phoenix Plan: A Strategic Guide to Financial Recovery, Credit Dominance, and Wealth Creation',
+    title: 'The Fynix Plan: A Strategic Guide to Financial Recovery, Credit Dominance, and Wealth Creation',
     description: 'Stabilize cash flow, counter wage garnishment, and build a resilient foundation.',
     to: '/docs/financial-planning-for-difficult-situations'
   },
