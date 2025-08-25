@@ -1,18 +1,37 @@
 import matter from 'gray-matter'
 
-export type Post = { slug: string; title: string; description: string; date: string; content: string }
+export type Post = {
+  slug: string
+  title: string
+  date?: string
+  excerpt?: string
+  content: string
+}
 
-const md = import.meta.glob('../content/blog/**/*.md', { as: 'raw', eager: true }) as Record<string, string>
+/**
+ * Loads markdown/MDX files as raw strings and parses front-matter.
+ * Works entirely in the browser (no Node Buffer/vfile).
+ * If the blog folder doesn’t exist yet, returns [].
+ */
+export function getAllPosts(): Post[] {
+  const files = import.meta.glob('../content/blog/**/*.{md,mdx}', {
+    eager: true,
+    query: '?raw',
+    import: 'default'
+  }) as Record<string, string>
 
-export const posts: Post[] = Object.entries(md).map(([path, raw]) => {
-  const { data, content } = matter(raw)
-  const file = path.split('/').pop() || ''
-  const slug = file.replace(/\.md$/i, '')
-  return {
-    slug,
-    title: data.title || slug,
-    description: data.description || '',
-    date: data.date || new Date().toISOString(),
-    content
+  const rows: Post[] = []
+  for (const [path, raw] of Object.entries(files)) {
+    if (typeof raw !== 'string') continue
+    const slug = path.split('/').pop()!.replace(/\.(md|mdx)$/i, '')
+    const { data, content } = matter(raw)
+    rows.push({
+      slug,
+      title: (data?.title as string) || slug,
+      date: data?.date as string | undefined,
+      excerpt: data?.excerpt as string | undefined,
+      content
+    })
   }
-}).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+}

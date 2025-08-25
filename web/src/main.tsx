@@ -8,6 +8,11 @@ import './sentry'
 import { initAnalytics } from './analytics'
 import { AuthProvider } from '@/lib/auth'
 
+// --- Browser polyfill for Node's Buffer (needed by some md libs)
+import { Buffer } from 'buffer'
+;(window as any).Buffer ??= Buffer
+// ---
+
 initAnalytics()
 
 createRoot(document.getElementById('root')!).render(
