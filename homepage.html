@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Fynix — From ashes to assets</title>
+  <meta name="description" content="Practical calculators and step-by-step guides that help you stabilize, recover, and build wealth — without the fluff." />
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0b0f1f" />
+
+  <!-- Canonical & OG -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Fynix — From ashes to assets" />
+  <meta property="og:description" content="Practical calculators and step-by-step guides that help you stabilize, recover, and build wealth — without the fluff." />
+  <meta property="og:image" content="https://i.imgur.com/VXfQFab.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Fynix — From ashes to assets" />
+  <meta name="twitter:description" content="Practical calculators and step-by-step guides that help you stabilize, recover, and build wealth — without the fluff." />
+  <meta name="twitter:image" content="https://i.imgur.com/VXfQFab.png" />
+  <link rel="icon" href="https://i.imgur.com/VXfQFab.png" />
+
+  <!-- Fonts + Tailwind (CDN for drop-in) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --page-max: 1120px;
+      --ring: 0 10px 40px rgba(255, 153, 102, .14);
+      --glow:
+        radial-gradient(800px 340px at 90% -10%, rgba(255,153,102,.22), transparent 65%),
+        radial-gradient(720px 300px at 10% 0%, rgba(124,58,237,.18), transparent 60%),
+        radial-gradient(680px 240px at 50% 0%, rgba(14,165,233,.12), transparent 60%);
+    }
+    html, body { height: 100%; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+
+    /* utility-ish helpers for consistent look */
+    .byline { font-size: 11px; opacity: .9; }
+    .tab        { padding: 0.5rem 1rem; border-radius: 0.75rem; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.05); transition: background .2s ease; }
+    .tab:hover  { background: rgb(255 255 255 / 0.1); }
+    .tab-active { background: rgb(255 255 255 / 0.1); border-color: rgb(255 255 255 / 0.2); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+    .btn        { display:inline-flex; align-items:center; justify-content:center; padding: 0.5rem 1rem; border-radius:0.75rem; font-weight:700; transition: transform .08s ease, background .2s ease; }
+    .btn-lg     { padding: 0.75rem 1.25rem; font-size: 1rem; }
+    .btn-primary{ background: rgb(251 146 60 / .9); color: #0b0f1f; box-shadow: var(--ring); }
+    .btn-primary:hover { background: rgb(251 146 60); transform: translateY(-1px); }
+    .btn-ghost  { background: rgb(255 255 255 / 0.05); color: white; border: 1px solid rgb(255 255 255 / 0.1); }
+    .btn-ghost:hover { background: rgb(255 255 255 / 0.1); }
+    .card       { border-radius: 1rem; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.05); padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .containerx { width: 100%; max-width: var(--page-max); }
+
+    /* elegant background */
+    .bg-nebula::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: var(--glow);
+      pointer-events: none;
+    }
+
+    /* focus styles */
+    :focus-visible { outline: 2px solid #fb923c; outline-offset: 2px; }
+  </style>
+</head>
+
+<body class="min-h-full bg-[#0b0f1f] text-slate-100 relative">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:px-3 focus:py-2 focus:rounded-lg focus:bg-white/10">Skip to content</a>
+
+  <!-- Decorative nebula -->
+  <div class="bg-nebula absolute inset-0"></div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-50 backdrop-blur bg-[#0b0f1f]/80 border-b border-white/10">
+    <div class="containerx mx-auto px-4">
+      <div class="flex h-16 items-center gap-3">
+        <!-- brand -->
+        <a href="/" class="flex items-center gap-3 select-none" aria-label="Fynix Home">
+          <img src="https://i.imgur.com/VXfQFab.png" alt="Fynix logo" class="h-8 w-8 rounded-lg" loading="eager" />
+          <div class="leading-tight">
+            <div class="font-extrabold text-lg tracking-wide">Fynix</div>
+            <div class="byline">by BLAiZE IT🔥</div>
+          </div>
+        </a>
+
+        <!-- desktop nav -->
+        <nav class="ml-6 hidden md:flex items-center gap-2 text-sm" aria-label="Primary">
+          <a class="tab tab-active" href="/" aria-current="page">Home</a>
+          <a class="tab" href="/dashboard">Dashboard</a>
+          <a class="tab" href="/docs">Docs</a>
+          <a class="tab" href="/tools">Tools</a>
+          <a class="tab" href="/onboarding">Onboarding</a>
+          <a class="tab" href="/daily">Fynix Daily</a>
+          <a class="tab" href="/pricing">Pricing</a>
+          <a class="tab" href="/blog">Blog</a>
+          <a class="tab" href="/about">About</a>
+          <a class="tab" href="/contact">Contact</a>
+          <a class="tab" href="/billing">Billing</a>
+          <a class="tab" href="/login">Login</a>
+          <a class="tab" href="/profile">Profile</a>
+        </nav>
+
+        <!-- mobile -->
+        <button id="menuBtn" class="md:hidden ml-auto tab" aria-expanded="false" aria-controls="mnav">Menu</button>
+      </div>
+
+      <!-- mobile panel -->
+      <div id="mnav" class="md:hidden hidden pb-3">
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <a class="tab tab-active" href="/" aria-current="page">Home</a>
+          <a class="tab" href="/dashboard">Dashboard</a>
+          <a class="tab" href="/docs">Docs</a>
+          <a class="tab" href="/tools">Tools</a>
+          <a class="tab" href="/onboarding">Onboarding</a>
+          <a class="tab" href="/daily">Fynix Daily</a>
+          <a class="tab" href="/pricing">Pricing</a>
+          <a class="tab" href="/blog">Blog</a>
+          <a class="tab" href="/about">About</a>
+          <a class="tab" href="/contact">Contact</a>
+          <a class="tab" href="/billing">Billing</a>
+          <a class="tab" href="/login">Login</a>
+          <a class="tab" href="/profile">Profile</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main id="main" class="relative">
+    <!-- Hero -->
+    <section class="containerx mx-auto px-4 pt-14 pb-8 md:pt-16 md:pb-14 text-center">
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-orange-200 to-orange-400">
+        From ashes to assets
+      </h1>
+      <p class="mt-4 text-slate-300/90 max-w-2xl mx-auto">
+        Practical calculators and step-by-step guides that help you stabilize, recover, and build wealth — without the fluff.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a href="/daily" class="btn btn-primary btn-lg">Open Fynix Daily</a>
+        <a href="/docs" class="btn btn-ghost btn-lg">Browse Guides</a>
+      </div>
+
+      <!-- Pillars -->
+      <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <article class="card text-left">
+          <div class="flex items-start gap-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" class="mt-0.5 opacity-90" aria-hidden="true"><path fill="currentColor" d="M7 11h10v2H7zM7 6h10v2H7zM7 16h7v2H7z"/></svg>
+            <div>
+              <h3 class="font-semibold mb-1">Stability</h3>
+              <p class="text-sm text-slate-300/90">Zero-based budgets, income planning, emergency buffers.</p>
+            </div>
+          </div>
+        </article>
+        <article class="card text-left">
+          <div class="flex items-start gap-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" class="mt-0.5 opacity-90" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3Zm1 1v8h6a8 8 0 0 0-6-8Z"/></svg>
+            <div>
+              <h3 class="font-semibold mb-1">Recovery</h3>
+              <p class="text-sm text-slate-300/90">Debt payoff math, credit rebuilding, score hygiene.</p>
+            </div>
+          </div>
+        </article>
+        <article class="card text-left">
+          <div class="flex items-start gap-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" class="mt-0.5 opacity-90" aria-hidden="true"><path fill="currentColor" d="M3 13h3l2 3 3-8 3 10 2-5h5v2h-3l-3 0-1 3H9l-2-3H3z"/></svg>
+            <div>
+              <h3 class="font-semibold mb-1">Growth</h3>
+              <p class="text-sm text-slate-300/90">Compounding, portfolios, and milestones.</p>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- CTA -->
+      <div class="mt-16 md:mt-20">
+        <h2 class="text-xl md:text-2xl font-extrabold">Ready to go further?</h2>
+        <p class="mt-2 text-slate-300/90">Installable PWA, cloud sync, and premium playbooks.</p>
+        <a href="/pricing" class="mt-6 inline-flex btn btn-primary btn-lg">See Pricing</a>
+      </div>
+    </section>
+
+    <!-- Secondary section (trust bullets) -->
+    <section class="containerx mx-auto px-4 pb-14">
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300/90">
+          <div class="font-semibold mb-1">No fluff, just math</div>
+          Every guide is step-by-step, with plain-language explanations and transparent formulas.
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300/90">
+          <div class="font-semibold mb-1">Own your data</div>
+          Local-first by default, with optional cloud sync and PWA install for offline use.
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300/90">
+          <div class="font-semibold mb-1">Built for momentum</div>
+          Track milestones, streaks, and wins that compound into long-term results.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/10 py-10">
+    <div class="containerx mx-auto px-4">
+      <div class="grid gap-6 md:grid-cols-3 text-sm">
+        <div>
+          <div class="font-semibold mb-2">Fynix</div>
+          <p class="text-slate-300/80 max-w-sm">From ashes to assets. Practical, humane finance tools that respect your time and attention.</p>
+        </div>
+        <nav aria-label="Footer" class="grid grid-cols-2 gap-2">
+          <a class="tab" href="/docs">Docs</a>
+          <a class="tab" href="/tools">Tools</a>
+          <a class="tab" href="/pricing">Pricing</a>
+          <a class="tab" href="/blog">Blog</a>
+          <a class="tab" href="/about">About</a>
+          <a class="tab" href="/contact">Contact</a>
+        </nav>
+        <div class="self-start">
+          <div class="text-slate-300/80">© <span id="y"></span> Fynix — Crafted by <span class="font-semibold">BLAiZE IT🔥</span>.</div>
+          <div class="text-slate-400/70 mt-2">Educational content, not financial advice.</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // current year
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // mobile menu toggle (no layout shift)
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('mnav');
+    btn?.addEventListener('click', () => {
+      const wasHidden = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden');
+      btn.setAttribute('aria-expanded', String(wasHidden));
+    });
+  </script>
+</body>
+</html>
