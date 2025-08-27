@@ -11,6 +11,7 @@ html,
 body,
 #root {
   height: 100%;
+  overflow-x: hidden;
 }
 body {
   font-family: Inter, ui-sans-serif, system-ui;
@@ -45,4 +46,32 @@ mark[data-hl="1"],
   background: rgba(245, 158, 11, 0.25);
   padding: 0 0.15em;
   border-radius: 0.2em;
+}
+
+/* Responsive tables in markdown — avoid page overflow */
+.prose table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.prose thead,
+.prose tbody,
+.prose tr {
+  width: max-content;
+}
+.prose th,
+.prose td {
+  white-space: nowrap;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Long links/words don’t blow out the layout */
+.prose a,
+.prose p,
+.prose li {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
