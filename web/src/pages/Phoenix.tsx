@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import { Button, ButtonMuted } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Field, Input } from '@/components/ui/Field'
@@ -55,6 +55,11 @@ export default function Phoenix(){
   const incRef = useRef<HTMLInputElement>(null)
   const catRef = useRef<HTMLInputElement>(null)
   const expRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const summary = { monthlyIncome: totalIncome, monthlyExpenses: totalExpenses }
+    localStorage.setItem('fynix.dashboard.summary', JSON.stringify(summary))
+  }, [totalIncome, totalExpenses])
 
   const addIncome = () => { const name = nameRef.current?.value?.trim() || 'Income'; const amount = Number(incRef.current?.value || 0); if (!amount) return; setIncomes(v => [...v, { id: crypto.randomUUID(), name, amount }]); if (nameRef.current) nameRef.current.value = ''; if (incRef.current) incRef.current.value = '' }
   const addExpense = () => { const category = catRef.current?.value?.trim() || 'Expense'; const amount = Number(expRef.current?.value || 0); if (!amount) return; setExpenses(v => [...v, { id: crypto.randomUUID(), category, amount }]); if (catRef.current) catRef.current.value = ''; if (expRef.current) expRef.current.value = '' }
