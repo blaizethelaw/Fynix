@@ -22,13 +22,13 @@ const mdx = import.meta.glob("../content/**/*.mdx", {
 }) as Record<string, string>;
 const files = { ...md, ...mdx };
 
+type Heading = { level: 2 | 3; text: string; id: string; line: number };
 type Doc = {
   slug: string;
   title: string;
   content: string;
   headings: Heading[];
 };
-type Heading = { level: 2 | 3; text: string; id: string; line: number };
 
 const slugify = (s: string) =>
   s
@@ -43,7 +43,11 @@ const toDocs = (m: Record<string, string>): Doc[] =>
     .map(([path, content]) => {
       const file = path.split("/").pop() ?? "";
       const slug = file.replace(/\.(md|mdx)$/i, "");
-      const title = content.match(/^#\s+(.+?)\s*$/m)?.[1] ?? slug;
+      const rawTitle = content.match(/^#\s+(.+?)\s*$/m)?.[1] ?? slug;
+      const title = rawTitle
+        .replace(/[*_`~]/g, "")
+        .replace(/<[^>]+>/g, "")
+        .trim();
       const headings: Heading[] = content
         .split("\n")
         .map((line, i) => ({ line: i, raw: line }))
@@ -72,7 +76,7 @@ const tokenize = (q: string) =>
   q
     .toLowerCase()
     .trim()
-    .split(/[\s\/\\-]+/)
+    .split(/[\s/\\-]+/)
     .filter(Boolean);
 
 function searchDocs(query: string, limit = 20): SearchHit[] {
@@ -88,12 +92,8 @@ function searchDocs(query: string, limit = 20): SearchHit[] {
     let score = 0;
     let bestIdx = -1;
 
-    // term scoring
     for (const t of terms) {
-      const inTitle = titleLower.includes(t);
-      if (inTitle) score += 5;
-
-      // count occurrences in body
+      if (titleLower.includes(t)) score += 5;
       let idx = lower.indexOf(t);
       while (idx !== -1) {
         score += 1;
@@ -102,7 +102,6 @@ function searchDocs(query: string, limit = 20): SearchHit[] {
       }
     }
 
-    // phrase boost
     const phrase = terms.join(" ");
     const phraseIdx = lower.indexOf(phrase);
     if (phraseIdx !== -1) {
@@ -112,16 +111,8 @@ function searchDocs(query: string, limit = 20): SearchHit[] {
 
     if (score <= 0) continue;
 
-    // Find nearest previous heading for anchor
     const { anchor, snippetHtml } = buildSnippetAndAnchor(d, bestIdx, terms);
-
-    hits.push({
-      slug: d.slug,
-      title: d.title,
-      score,
-      anchor,
-      snippetHtml,
-    });
+    hits.push({ slug: d.slug, title: d.title, score, anchor, snippetHtml });
   }
 
   return hits.sort((a, b) => b.score - a.score).slice(0, limit);
@@ -134,10 +125,9 @@ function buildSnippetAndAnchor(doc: Doc, bestIdx: number, terms: string[]) {
   const start = Math.max(0, bestIdx - 120);
   const end = Math.min(content.length, bestIdx + 240);
   let snippet = content.slice(start, end).replace(/\n+/g, " ");
-  if (start > 0) snippet = "\u2026 " + snippet;
-  if (end < content.length) snippet = snippet + " \u2026";
+  if (start > 0) snippet = "… " + snippet;
+  if (end < content.length) snippet = snippet + " …";
 
-  // Highlight terms in snippet (safe subset)
   const esc = (s: string) =>
     s.replace(
       /[&<>"']/g,
@@ -159,14 +149,12 @@ function buildSnippetAndAnchor(doc: Doc, bestIdx: number, terms: string[]) {
     snippetHtml = snippetHtml.replace(re, "<mark>$1</mark>");
   }
 
-  // Anchor: find nearest heading above the match
   const pre = lower.slice(0, bestIdx);
   const linesBefore = pre.split("\n").length - 1;
   const h = [...doc.headings]
     .filter((hh) => hh.line <= linesBefore)
     .sort((a, b) => b.line - a.line)[0];
   const anchor = h ? h.id : undefined;
-
   return { anchor, snippetHtml };
 }
 
@@ -184,29 +172,27 @@ export default function DocsPage() {
         No docs found in <code>src/content</code>.
       </main>
     );
-
   const current = docs.find((d) => d.slug === slug) ?? docs[0];
 
   const articleRef = useRef<HTMLElement | null>(null);
   const [toc, setToc] = useState<TocItem[]>([]);
   const [active, setActive] = useState<string>("");
 
-  // Mobile panes: 'none' | 'list' | 'toc'
+  // Mobile panes
   const [mobilePane, setMobilePane] = useState<"none" | "list" | "toc">("none");
 
-  // Local sidebar filter (left column list)
+  // Left list filter
   const [filter, setFilter] = useState("");
 
-  // Global Search overlay
+  // Global search
   const [showSearch, setShowSearch] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   const [results, setResults] = useState<SearchHit[]>([]);
 
-  // Build ToC and scroll-spy
+  // Build ToC + scroll-spy
   useEffect(() => {
     const el = articleRef.current;
     if (!el) return;
-
     const headings = Array.from(
       el.querySelectorAll("h2, h3"),
     ) as HTMLHeadingElement[];
@@ -220,14 +206,11 @@ export default function DocsPage() {
     setToc(items);
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = (entry.target as HTMLElement).id;
-            if (id) setActive(id);
-          }
-        });
-      },
+      (entries) =>
+        entries.forEach(
+          (entry) =>
+            entry.isIntersecting && setActive((entry.target as HTMLElement).id),
+        ),
       { rootMargin: "-64px 0px -70% 0px", threshold: [0, 1.0] },
     );
     headings.forEach((h) => observer.observe(h));
@@ -251,21 +234,17 @@ export default function DocsPage() {
   useEffect(() => {
     if (!showSearch) return;
     const q = searchQ.trim();
-    if (!q) {
-      setResults([]);
-      return;
-    }
-    setResults(searchDocs(q));
+    setResults(q ? searchDocs(q) : []);
   }, [showSearch, searchQ]);
 
-  // Highlight terms in-page if ?q= is present
+  // In-page highlight for ?q=
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const q = params.get("q");
     const el = articleRef.current;
     if (!el) return;
 
-    // clear previous <mark>
+    // clear old marks
     el.querySelectorAll('mark[data-hl="1"]').forEach((mk) => {
       const parent = mk.parentNode;
       if (!parent) return;
@@ -283,30 +262,26 @@ export default function DocsPage() {
 
     for (const node of nodes) {
       const txt = node.nodeValue || "";
-      let mutated = false;
-      let frag = document.createDocumentFragment();
-      let lastIndex = 0;
-
       const re = new RegExp(
         `(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
         "gi",
       );
+      let mutated = false;
+      let last = 0;
       let m: RegExpExecArray | null;
+      const frag = document.createDocumentFragment();
       while ((m = re.exec(txt)) !== null) {
         mutated = true;
-        const before = txt.slice(lastIndex, m.index);
+        const before = txt.slice(last, m.index);
         if (before) frag.appendChild(document.createTextNode(before));
-
         const mk = document.createElement("mark");
         mk.setAttribute("data-hl", "1");
         mk.textContent = m[0];
         frag.appendChild(mk);
-
-        lastIndex = m.index + m[0].length;
+        last = m.index + m[0].length;
       }
       if (!mutated) continue;
-
-      const after = txt.slice(lastIndex);
+      const after = txt.slice(last);
       if (after) frag.appendChild(document.createTextNode(after));
       node.replaceWith(frag);
     }
@@ -326,60 +301,25 @@ export default function DocsPage() {
     );
   }, [filter]);
 
-  // Open a search result
   const openResult = (hit: SearchHit) => {
     setShowSearch(false);
     const q = encodeURIComponent(searchQ.trim());
     const anchor = hit.anchor ? `#${hit.anchor}` : "";
     navigate(`/docs/${hit.slug}${anchor}?q=${q}`);
     setTimeout(() => {
-      const targetId = hit.anchor;
-      if (targetId) {
-        const el = document.getElementById(targetId);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      if (hit.anchor)
+        document
+          .getElementById(hit.anchor)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 60);
   };
 
   return (
-    <div className="flex">
-      {/* Left sidebar (docs list) */}
-      <aside className="w-72 shrink-0 border-r hidden lg:block">
-        <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <h2 className="font-semibold">Docs</h2>
-            <button
-              onClick={() => setShowSearch(true)}
-              className="ml-auto rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs hover:bg-white/20"
-              title="Search (Ctrl/Cmd+K)"
-            >
-              Search
-            </button>
-          </div>
-          <input
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter list…"
-            className="mb-3 w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-400/20"
-          />
-          <nav className="flex flex-col gap-1 text-sm">
-            {filteredDocs.map((d) => (
-              <Link
-                key={d.slug}
-                to={`/docs/${d.slug}`}
-                className={`rounded-lg px-2 py-1 hover:bg-white/5 ${d.slug === current.slug ? "bg-white/10 font-semibold" : ""}`}
-              >
-                {d.title}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 p-4 lg:p-6 lg:pl-8">
+    <div className="w-full overflow-x-hidden">
+      {/* Container keeps everything within a safe max width to avoid horizontal scroll */}
+      <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4 lg:px-6">
         {/* Mobile toolbar */}
-        <div className="lg:hidden mb-4 flex gap-2">
+        <div className="lg:hidden mb-4 mt-2 flex gap-2">
           <button
             onClick={() =>
               setMobilePane((p) => (p === "list" ? "none" : "list"))
@@ -402,134 +342,171 @@ export default function DocsPage() {
           </button>
         </div>
 
-        {/* Mobile panes (overlay) */}
-        {mobilePane !== "none" && (
-          <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/60"
-            onClick={() => setMobilePane("none")}
-          >
-            <div
-              className="absolute bottom-0 left-0 right-0 rounded-t-2xl border-t border-white/15 bg-neutral-900 p-4 max-h-[70vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
+        {/* Grid: Left list | Main article | Right ToC */}
+        <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)_18rem] gap-4 lg:gap-6">
+          {/* Left sidebar (Docs list) */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto rounded-xl border border-white/12 bg-white/5 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <h2 className="font-semibold">Docs</h2>
+                <button
+                  onClick={() => setShowSearch(true)}
+                  className="ml-auto rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs hover:bg-white/20"
+                  title="Search (Ctrl/Cmd+K)"
+                >
+                  Search
+                </button>
+              </div>
+              <input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Filter list…"
+                className="mb-3 w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-400/20"
+              />
+              <nav className="flex flex-col gap-1 text-sm">
+                {filteredDocs.map((d) => (
+                  <Link
+                    key={d.slug}
+                    to={`/docs/${d.slug}`}
+                    className={`rounded-lg px-2 py-1 hover:bg-white/5 ${d.slug === current.slug ? "bg-white/10 font-semibold" : ""}`}
+                  >
+                    {d.title}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </aside>
+
+          {/* Main article */}
+          <main className="min-w-0">
+            <article
+              ref={articleRef}
+              className="prose dark:prose-invert mx-auto max-w-3xl lg:max-w-4xl
+                         prose-headings:scroll-mt-24 prose-pre:overflow-x-auto
+                         prose-img:rounded-lg prose-img:shadow-md"
             >
-              {mobilePane === "list" ? (
-                <>
-                  <div className="mb-3 flex items-center gap-2">
-                    <h3 className="font-semibold">Docs</h3>
-                    <button
-                      onClick={() => setMobilePane("none")}
-                      className="ml-auto rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  <input
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    placeholder="Filter list…"
-                    className="mb-3 w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none"
-                  />
-                  <nav className="flex flex-col gap-1 text-sm">
-                    {filteredDocs.map((d) => (
-                      <Link
-                        key={d.slug}
-                        to={`/docs/${d.slug}`}
-                        onClick={() => setMobilePane("none")}
-                        className={`rounded-lg px-2 py-1 hover:bg-white/5 ${d.slug === current.slug ? "bg-white/10 font-semibold" : ""}`}
-                      >
-                        {d.title}
-                      </Link>
-                    ))}
-                  </nav>
-                </>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[
+                  rehypeSlug,
+                  [
+                    rehypeAutolinkHeadings,
+                    {
+                      behavior: "wrap",
+                      properties: { className: ["no-underline"], tabIndex: -1 },
+                    },
+                  ],
+                ]}
+              >
+                {current.content}
+              </ReactMarkdown>
+            </article>
+          </main>
+
+          {/* Right rail (sticky ToC) */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto rounded-xl border border-white/12 bg-white/5 p-4">
+              <h3 className="font-semibold mb-2">On this page</h3>
+              {toc.length === 0 ? (
+                <p className="text-sm opacity-70">No sections.</p>
               ) : (
-                <>
-                  <div className="mb-3 flex items-center gap-2">
-                    <h3 className="font-semibold">On this page</h3>
-                    <button
-                      onClick={() => setMobilePane("none")}
-                      className="ml-auto rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs"
+                <ul className="text-sm space-y-1">
+                  {toc.map((item) => (
+                    <li
+                      key={item.id}
+                      className={item.level === 3 ? "ml-4" : ""}
                     >
-                      Close
-                    </button>
-                  </div>
-                  {toc.length === 0 ? (
-                    <p className="text-sm opacity-70">No sections.</p>
-                  ) : (
-                    <ul className="text-sm space-y-1">
-                      {toc.map((item) => (
-                        <li
-                          key={item.id}
-                          className={item.level === 3 ? "ml-4" : ""}
-                        >
-                          <a
-                            href={`#${item.id}`}
-                            onClick={() => setMobilePane("none")}
-                            className={`inline-block rounded px-1 hover:underline ${active === item.id ? "font-semibold text-amber-200" : ""}`}
-                          >
-                            {item.text}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
+                      <a
+                        href={`#${item.id}`}
+                        className={`inline-block rounded px-1 hover:underline ${active === item.id ? "font-semibold text-amber-200" : ""}`}
+                      >
+                        {item.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
-          </div>
-        )}
+          </aside>
+        </div>
+      </div>
 
-        {/* Desktop "On this page" */}
-        <nav className="hidden lg:block mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-semibold">On this page</h3>
-            <button
-              onClick={() => setShowSearch(true)}
-              className="ml-auto rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs"
-            >
-              Search (Ctrl/Cmd+K)
-            </button>
-          </div>
-          {toc.length === 0 ? (
-            <p className="text-sm opacity-70">No sections found.</p>
-          ) : (
-            <ul className="text-sm space-y-1">
-              {toc.map((item) => (
-                <li key={item.id} className={item.level === 3 ? "ml-4" : ""}>
-                  <a
-                    href={`#${item.id}`}
-                    className={`inline-block rounded px-1 hover:underline ${active === item.id ? "font-semibold text-amber-200" : ""}`}
-                  >
-                    {item.text}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </nav>
-
-        {/* Article */}
-        <article
-          ref={articleRef}
-          className="prose dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-img:rounded-lg prose-img:shadow-md"
+      {/* ----- Mobile pane overlays ----- */}
+      {mobilePane !== "none" && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/60"
+          onClick={() => setMobilePane("none")}
         >
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[
-              rehypeSlug,
-              [
-                rehypeAutolinkHeadings,
-                {
-                  behavior: "wrap",
-                  properties: { className: ["no-underline"], tabIndex: -1 },
-                },
-              ],
-            ]}
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-t-2xl border-t border-white/15 bg-neutral-900 p-4 max-h-[70vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
-            {current.content}
-          </ReactMarkdown>
-        </article>
-      </main>
+            {mobilePane === "list" ? (
+              <>
+                <div className="mb-3 flex items-center gap-2">
+                  <h3 className="font-semibold">Docs</h3>
+                  <button
+                    onClick={() => setMobilePane("none")}
+                    className="ml-auto rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs"
+                  >
+                    Close
+                  </button>
+                </div>
+                <input
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  placeholder="Filter list…"
+                  className="mb-3 w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm outline-none"
+                />
+                <nav className="flex flex-col gap-1 text-sm">
+                  {filteredDocs.map((d) => (
+                    <Link
+                      key={d.slug}
+                      to={`/docs/${d.slug}`}
+                      onClick={() => setMobilePane("none")}
+                      className={`rounded-lg px-2 py-1 hover:bg-white/5 ${d.slug === current.slug ? "bg-white/10 font-semibold" : ""}`}
+                    >
+                      {d.title}
+                    </Link>
+                  ))}
+                </nav>
+              </>
+            ) : (
+              <>
+                <div className="mb-3 flex items-center gap-2">
+                  <h3 className="font-semibold">On this page</h3>
+                  <button
+                    onClick={() => setMobilePane("none")}
+                    className="ml-auto rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs"
+                  >
+                    Close
+                  </button>
+                </div>
+                {toc.length === 0 ? (
+                  <p className="text-sm opacity-70">No sections.</p>
+                ) : (
+                  <ul className="text-sm space-y-1">
+                    {toc.map((item) => (
+                      <li
+                        key={item.id}
+                        className={item.level === 3 ? "ml-4" : ""}
+                      >
+                        <a
+                          href={`#${item.id}`}
+                          onClick={() => setMobilePane("none")}
+                          className={`inline-block rounded px-1 hover:underline ${active === item.id ? "font-semibold text-amber-200" : ""}`}
+                        >
+                          {item.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ----- Global Search Overlay ----- */}
       {showSearch && (
@@ -559,8 +536,7 @@ export default function DocsPage() {
             <div className="max-h-[60vh] overflow-y-auto p-3">
               {!searchQ.trim() && (
                 <p className="px-2 py-6 text-sm opacity-70">
-                  Type to search across all documents. Use{" "}
-                  <kbd className="rounded bg-white/10 px-1">Enter</kbd> to open.
+                  Type to search. Use Enter to open.
                 </p>
               )}
               {searchQ.trim() && results.length === 0 && (
@@ -584,7 +560,6 @@ export default function DocsPage() {
                       </div>
                       <div
                         className="mt-1 text-sm opacity-90"
-                        // snippet already escaped + marked
                         dangerouslySetInnerHTML={{ __html: hit.snippetHtml }}
                       />
                       <div className="mt-2 text-xs opacity-60">
