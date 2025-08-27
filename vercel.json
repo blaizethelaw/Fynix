@@ -2,5 +2,9 @@
   "installCommand": "npm --prefix web i",
   "buildCommand": "npm --prefix web run build",
   "outputDirectory": "web/dist",
-  "framework": "vite"
+  "framework": "vite",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
+  ]
 }

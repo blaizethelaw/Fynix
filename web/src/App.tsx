@@ -65,6 +65,7 @@ export default function App() {
         <Route path="/billing" element={<Billing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<Protected><Profile /></Protected>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   )
